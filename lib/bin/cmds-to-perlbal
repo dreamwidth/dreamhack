@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+open(TELNET, "|-", "/usr/bin/telnet 127.0.0.1 60000 >/dev/null 2>/dev/null");
+foreach my $line (<STDIN>) {
+  chomp($line);
+  print TELNET "$line\n";
+}
+sleep(2);
+close(TELNET);

@@ -1,0 +1,107 @@
+#!/usr/bin/perl
+
+require '/dreamhack/lib/dreamhacks-db-readonly.pl';
+
+my $username = getpwuid($<);
+my $sth = $dbh->prepare("SELECT `username` FROM users WHERE ssh_username = ?");
+$sth->execute($username);
+if ($sth->rows == 0) {
+  die "Couldn't find you in the Dreamhacks database. :( Please let Sophie know about this.\n";
+}
+elsif ($sth->rows > 1) {
+  die "For some reason, you have more than one row listed in the database for your SSH username. This shouldn't happen - please let Sophie know about this.\n";
+}
+
+my $LJHOME = $ENV{'LJHOME'};
+$LJHOME=~s/\/$//;   # just in case
+if (!defined $LJHOME) {
+  die <<END;
+For some reason, your \$LJHOME variable isn't defined. This may indicate that
+something is wrong with your Dreamhack. The \$LJHOME variable is required for
+this script to function.
+
+Please email Sophie at <sophie\@hack.dreamwidth.net>.
+END
+}
+
+my $skipintro = 0;
+my $checked = 0;
+my $nohome = 0;
+
+if (!-d $LJHOME) {
+  $nohome = 1;
+  print "Your \$LJHOME directory doesn't appear to exist.\n\n";
+  $| = 1;
+  print "Would you like this script to recreate it for you? Type 'y' or 'n', followed by RETURN: ";
+  my $answer = lc(<STDIN>);
+  $| = 0;
+  if ($answer=~/^y/s) {
+    print "Okay, will do.\n\n";
+    $skipintro = 1;
+  }
+  else {
+    print "Okay. In that case, there's nothing that this script can do. Exiting.\n";
+    exit;
+  }
+}
+
+if (-d "$LJHOME/.git") {
+  print "It appears that your \$LJHOME directory is already cloned from git.\n\n";
+  $| = 1;
+  print "Would you like this script to do some automatic checks to make sure everything is correct? Type 'y' or 'n', followed by RETURN: ";
+  my $answer = lc(<STDIN>);
+  $| = 0;
+  if ($answer=~/^y/s) {
+    print "Doing automatic checks...\n";
+    doChecks();
+    exit;
+  }
+  else {
+    print "Okay. In that case, you should be good to go already. Exiting.\n";
+    exit;
+  }
+}
+
+# initial checks complete, now do the intro
+unless ($skipintro) {
+  print <<END;
+Dreamhack Github Conversion Script
+==================================
+
+This script will convert your Dreammhack to use git. It is based on the
+instructions available on the wiki at:
+    http://wiki.dwscoalition.org/wiki/index.php/Moving_your_Dreamwidth_installation_to_use_Github
+
+END
+}
+
+print <<END;
+You'll need a GitHub account with forked copies of dw-free and dw-nonfree
+in order to use this script. If you don't have one, or you haven't forked
+both projects, please refer to the "On github, fork dreamwidth's dw-free
+and dw-nonfree repositories" section of this link (note that you don't need
+to read any of the other sections):
+    http://wiki.dwscoalition.org/wiki/index.php/Moving_your_Dreamwidth_installation_to_use_Github
+
+END
+$| = 1;
+print "What is your username on GitHub?\n";
+print "> ";
+my $gitname = <STDIN>;
+chomp($gitname);
+
+print "Thanks.\n\n";
+
+unless ($nohome) {
+  if (-d "$LJHOME-old") {
+    my $dirname = $LJHOME;
+    $dirname=~s/^.*\///;
+    print <<END;
+Before continuing, your \$LJHOME directory should be backed up. You seem to
+have a backup callled '$dirname-old' already, possibly from a previous conversion.
+Do you want to OVERWRITE this backup with a new one?
+END
+  }
+  print <<END;
+END
+}

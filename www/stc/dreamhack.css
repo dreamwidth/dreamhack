@@ -1,0 +1,126 @@
+h2 {
+  margin-top: 0.5em;
+  font-size: larger;
+}
+
+p {
+  margin-bottom: 0.75em;
+}
+
+p.small {
+  font-size: 80%;
+}
+
+#menu li.topnav:hover a {
+  background-color: rgb(193, 39, 45);
+  color: rgb(255, 255, 255);
+}
+
+#application-form th {
+  text-align: right;
+  vertical-align: top;
+  padding-top: 0.25em;
+}
+
+#application-form td, #application-form th {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+  padding-bottom: 0.2em;
+}
+
+#application-form input[type="text"] {
+  border: 1px solid #C0C0C0;
+  padding: 0.1em;
+  margin-left: 0.1em;
+  margin-right: 0.1em;
+}
+
+#application-form input[type="text"].stretch {
+  width: 18em;
+}
+
+#application-form input[type="text"].ljuser {
+  background-image: url(/img/ljuser.gif);
+  background-repeat: no-repeat;
+  background-position: 0 50%;
+  padding-left: 18px;
+  font-weight: bold;
+  color: blue;
+}
+
+#application-form input[type="text"].dwuser {
+  background-image: url(/img/dwuser.png);
+  background-repeat: no-repeat;
+  background-position: 0 50%;
+  padding-left: 18px;
+  font-weight: bold;
+  color: rgb(193, 39, 44);
+}
+
+table#dreamhacks {
+  border: 2px solid #808080;
+  margin: 1em;
+}
+
+table#dreamhacks tr {
+  height: 2em;
+}
+
+table#dreamhacks th, table#dreamhacks td {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  vertical-align: middle;
+}
+
+table#dreamhacks th {
+  border-bottom: 1px solid #808080;
+  background-color: #DDDDDD;
+}
+
+table#dreamhacks td.planfile {
+  border-top: 1px solid #E0E0E0;
+}
+
+table#dreamhacks td.planfile p.planfileheader {
+  font-size: smaller;
+}
+
+table#dreamhacks td.planfile p.planfile {
+  font-style: italic;
+  padding-left: 2em;
+}
+
+table#dreamhacks td.name {
+  font-weight: bold;
+}
+
+table#dreamhacks tr.user td {
+  background-color: #EDEDED;
+  border-top: 1px solid #B8B8B8;
+}
+
+table#dreamhacks span.notrunning {
+  color: #808080;
+}
+
+span.ljuser {
+  font-weight: bold;
+}
+
+span.dwuser {
+  font-weight: bold;
+}
+
+span.ljuser img {
+  vertical-align: bottom;
+}
+
+span.dwuser img {
+  vertical-align: bottom;
+}
+
+#menu ul li a:hover {
+  background-image: url("/img/tropo-red/icon_menu_swirl_dropdown.png");
+}

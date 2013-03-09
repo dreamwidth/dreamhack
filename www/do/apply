@@ -1,0 +1,61 @@
+#!/usr/bin/perl
+
+use CGI qw(:standard);
+use Mail::Send;
+
+if ($ENV{'REQUEST_METHOD'} ne "POST") {
+  print header("text/html; charset=UTF-8");
+  print <<ERR;
+<html>
+  <head>
+    <title>POST required</title>
+  </head>
+  <body>
+    <h1>POST required</h1>
+    <p>You must use <a href="/apply.shtml">the application form</a> to use this script.</p>
+  </body>
+</html>
+ERR
+}
+else {
+  my $error = 0;
+
+  # check for required fields
+  @required = qw(
+    username
+    prefname
+    email
+  );
+  foreach my $required (@required) {
+    if (!(param($required))) { $error = 1; }
+  }
+
+  if ($error == 0) {
+    # just send this in an email
+    my $msg = new Mail::Send(
+                              subject => "Dreamhack application: " . param("username"),
+                              to      => 'sophie',
+                            );
+    $msg->set("From", '"Dreamhack" <sophie@hack.dreamwidth.net>');
+    my $fh = $msg->open();
+    print $fh <<MSG;
+  A new Dreamhack application has been filed.
+
+MSG
+    my @params = param();
+    foreach my $key (@params) {
+      print $fh "$key: " . param($key) . "\n";
+    }
+    $fh->close() || ($error = 2);
+  }
+
+  my $to = "http://hack.dreamwidth.net/apply-sent.shtml";
+     if ($error == 1) { $to = "http://hack.dreamwidth.net/apply-error.shtml"; }
+  elsif ($error == 2) { $to = "http://hack.dreamwidth.net/apply-error-mail.shtml"; }
+  # we're done
+  print <<OUT;
+Status: 302 Found
+Location: $to
+
+OUT
+}

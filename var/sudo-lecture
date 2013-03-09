@@ -1,0 +1,19 @@
+If you are a Dreamhack user trying to stop or start Apache, please note that
+using sudo is not the correct way to do it on a Dreamhack!
+
+  * Where the instructions say to execute:
+      sudo /etc/init.d/apache2 stop
+
+    You should instead execute:
+      stop-apache
+
+  * Similarly, where the instructions say to execute:
+      sudo /etc/init.d/apache2 start
+
+    You should instead execute:
+      start-apache
+
+The instructions are written assuming a 'normal' installation of Dreamwidth,
+so they are incorrect on a Dreamhack.
+
+You can press Ctrl-C at this point to exit out of sudo, if you wish.

@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+
+require '/dreamhack/lib/dreamhacks-db.pl';
+
+my ($port) = @ARGV;
+if (!($port) || $port=~/[^0-9]/) {
+  die "Invalid number '$port'";
+}
+
+my $sth = $dbh->prepare("SELECT `homedir`, `apachedir` FROM userports LEFT OUTER JOIN `users` USING (`username`) WHERE `port` = ?");
+$sth->execute($port);
+if (my @dirs = $sth->fetchrow_array()) {
+  print join("/", @dirs) . "\n";
+}
+else { exit(1); }

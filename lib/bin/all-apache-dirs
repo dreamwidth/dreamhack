@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+require '/dreamhack/lib/dreamhacks-db.pl';
+
+my $sth = $dbh->prepare("SELECT `homedir`, `apachedir` FROM userports LEFT OUTER JOIN `users` USING (`username`)");
+$sth->execute();
+while (my @dirs = $sth->fetchrow_array()) {
+  print join("/", @dirs) . "\n";
+}

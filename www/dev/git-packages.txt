@@ -1,0 +1,11 @@
+git-arch - fast, scalable, distributed revision control system (arch interoperability)
+git-core - fast, scalable, distributed revision control system
+git-cvs - fast, scalable, distributed revision control system (cvs interoperability)
+git-daemon-run - fast, scalable, distributed revision control system (git-daemon service)
+git-doc - fast, scalable, distributed revision control system (documentation)
+git-email - fast, scalable, distributed revision control system (email add-on)
+git-gui - fast, scalable, distributed revision control system (GUI)
+git-svn - fast, scalable, distributed revision control system (svn interoperability)
+gitk - fast, scalable, distributed revision control system (revision tree visualizer)
+gitweb - fast, scalable, distributed revision control system (web interface)
+tig - fast, scalable, distributed revision control system (CLI repository browser)

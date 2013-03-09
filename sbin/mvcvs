@@ -1,0 +1,15 @@
+#!/bin/bash
+export LJHOME=/dreamhack/opt/dhroot
+DIRS=$(find $LJHOME/cvs -maxdepth 1 -type d)
+for i in $DIRS; do
+  if [ "$i" != "$LJHOME/cvs" ]; then
+    DIR=$(basename $i)
+    echo $DIR...
+    echo "> rm -rf /dreamhack/var/skel/dw/cvs/$DIR"
+    rm -rf /dreamhack/var/skel/dw/cvs/$DIR
+    echo "> mv $i /dreamhack/var/skel/dw/cvs/$DIR"
+    mv $i /dreamhack/var/skel/dw/cvs/$DIR
+    echo "> ln -s /dreamhack/var/skel/dw/cvs/$DIR $i"
+    ln -s /dreamhack/var/skel/dw/cvs/$DIR $i
+  fi
+done

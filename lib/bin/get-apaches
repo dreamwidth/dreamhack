@@ -1,0 +1,11 @@
+#!/usr/bin/perl
+
+require '/dreamhack/lib/dreamhacks-db-readonly.pl';
+
+my (@usernames) = @ARGV;
+my $query = "SELECT `homedir`, `apachedir` FROM userports LEFT OUTER JOIN `users` USING (`username`) WHERE `username` IN (" . join(", ", (("?") x @usernames)) . ")";
+my $sth = $dbh->prepare($query);
+$sth->execute(@usernames);
+while (my @dirs = $sth->fetchrow_array()) {
+  print join("/", @dirs) . "\n";
+}

@@ -1,0 +1,12 @@
+<!--#set var="title" value="List of Dreamhacks" -->
+<!--#include virtual="/_header.shtml" -->
+          <h1>List of Dreamhacks</h1>
+          <p>The following Dreamhacks are in use on this system. Note that if a particular Dreamhack
+          is not linked, that means that that Dreamhack's Apache instance is not currently running.</p>
+
+          <p>If you have a Dreamhack and want to include a description of what you're doing on this
+          page, simply create a file called <b>.plan</b> in your home directory and put your
+          description in that file. It'll automatically be included on this page.</p>
+
+<!--#exec cgi="/do/dreamhacks" -->
+<!--#include virtual="/_footer.html" -->

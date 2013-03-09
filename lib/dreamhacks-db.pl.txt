@@ -1,0 +1,35 @@
+# database variables for Dreamhacks script
+use DBI;
+
+$dbserver = "localhost";
+$dbusername = "";
+$dbpassword = "";
+$dbdatabase = "";
+
+$db = "DBI:mysql:$dbdatabase:$dbserver";
+$dbh = DBI->connect($db, $dbusername, $dbpassword);
+
+if ($dbh eq undef) {
+  my $dberr = DBI->errstr;
+  print <<OUT;
+Status: 500 Database Error
+Content-Type: text/html
+
+<html>
+<head>
+<title>Database Error</title>
+</head>
+<body>
+<p>Sorry, I couldn't connect to the database for some reason:</p>
+<blockquote><i>$dberr</i></blockquote>
+</body>
+</html>
+OUT
+  exit(0);
+}
+
+# other options
+$dbh->{'mysql_enable_utf8'} = 1;
+$dbh->do("SET NAMES utf8");
+
+return 1;

@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <title><!--#echo var="title" --> - Dreamhacks - Dreamwidth.org</title>
+    <link rel="stylesheet" href="/stc/tropo/reset.css" type="text/css">
+    <link rel="stylesheet" href="/stc/tropo/tropo-base.css" type="text/css">
+    <link rel="stylesheet" href="/stc/tropo/tropo-red.css" type="text/css">
+    <link rel="stylesheet" href="/stc/dreamhack.css" type="text/css">
+  </head>
+  <body>
+    <div id="canvas">
+      <div id="page">
+        <div id="masthead">
+          <span id="logo"><a href="http://www.dreamwidth.org/"><img src="/img/tropo-red/dw_logo.png"></a></span>
+        </div>
+        <div id="content">
