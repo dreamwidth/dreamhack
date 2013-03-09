@@ -1,0 +1,197 @@
+Welcome to your Dreamhack installation!
+
+This Dreamhack service is provided by Sophie (<sophie@hack.dreamwidth.net>)
+and is available for general use. Preference will be given to those actively
+doing development work, but please don't let the word 'development' stop you;
+we have a healthy, nurturing community of people who are more than willing to
+give their time in order to help out newcomers. (See the 'Community' section
+below for more details.)
+
+Getting Started
+===============
+
+rahaeli has written a superb wiki page detailing how to get started with your
+Dreamhack at the following address:
+  http://wiki.dwscoalition.org/notes/Dreamhack_Getting_Started
+
+It covers most of the common things you'll need to do to get started. If you
+have an issue, check this page first.
+
+Connecting
+==========
+
+You will need an SSH client to connect to your Dreamhack. You'll be using SSH
+to work with your Dreamhack for most things, including creating patches, so
+it's worth getting to know how to use it.
+
+  * Windows users can use PuTTY, from this URL:
+      http://www.chiark.greenend.org.uk/~sgtatham/putty/
+
+    You'll want to fill in the hostname as "hack.dreamwidth.net", then just
+    click Connect. (Alternatively, save it as a stored session for later.)
+
+  * Linux and Mac OS X users will generally already have OpenSSH, which will
+    allow you to connect. You can do this from the terminal; type the following
+    command (replacing  'dh-username' with your actual username):
+      ssh dh-username@hack.dreamwidth.net
+
+To connect, use the username/password combination from your initial email. (If
+you're reading this from the email itself, these details are above.)
+
+The first time you connect, your client will tell you that it doesn't have the
+host key in its cache. Check to make sure that the key fingerprint it lists is
+the same as below, and if so, feel free to continue. (Generally this will
+involve clicking or typing "Yes" at the prompt.) If the host key doesn't match,
+please contact Sophie at <sophie@hack.dreamwidth.net>.
+
+  * Host key (RSA): ed:e2:9d:86:4b:8e:a5:a9:ed:12:fc:ed:16:73:bd:c7
+
+When you log in for the first time, you will be reminded to create the
+password for the 'system' user. This can be done by running the following
+command:
+    $LJHOME/bin/upgrading/make_system.pl
+
+It is also recommended that on login you change your password to something
+more easily memorable by using the "passwd" command.
+
+Maintenance
+===========
+
+The Dreamhack installation that is installed is up-to-date at the time of
+setup, but if you wish to keep it up-to-date you will need to do so yourself.
+Instructions on doing so can be found at:
+  http://wiki.dwscoalition.org/notes/Dev_Maintenance
+
+Although your Dreamhack is ready to run, you may be interested in editing
+the $LJHOME/etc/config-local.pl file in order to further customize the options
+available.
+
+You can start and stop your Apache instance using the commands "start-apache"
+and "stop-apache". Although the initial setup will give you a working Apache
+instance, it will not bring it up automatically, so you will need to use
+"start-apache" to do so. (In the past, Apache instances were automatically
+brought up; this has changed due to memory considerations.)
+
+Please note that if the host machine is rebooted, Dreamhack installations on
+the server will not be brought back up automatically. In addition, if you do
+not foresee using your Dreamhack for a period of time, please bring it down
+with the "stop-apache" command.
+
+Resources
+=========
+
+If you're looking for a guide on what to do next, there are a number of
+resources on our wiki that you might find useful:
+
+  * http://wiki.dwscoalition.org/notes/Beginning_dev_checklist
+      This is an overview for beginning developers that starts at the *very*
+      beginning, which may be useful to some people.
+
+  * http://wiki.dwscoalition.org/notes/Development
+      An overview of development topics.
+
+  * http://wiki.dwscoalition.org/notes/Dev_Getting_Started
+      An overview of getting started.
+
+  * http://wiki.dwscoalition.org/notes/Bugzilla
+      An overview of the Bugzilla ticket system, including links to useful
+      searches.
+
+  * http://wiki.dwscoalition.org/notes/Dev_Version_Control
+      Some notes on working with the version control systems in use for
+      Dreamwidth code.
+
+Other articles can be found at this URL:
+  http://wiki.dwscoalition.org/notes/Category:Development
+
+Submitting Patches
+==================
+
+The process of submitting patches can be found on the wiki:
+  http://wiki.dwscoalition.org/notes/Dev_Patches#Creating_Patches
+
+Note that you will need a Contributor Licensing Agreement (CLA) on file with
+Dreamwidth Studios, LLC before your patches can be accepted into the codebase.
+More information on CLAs can be found on the wiki:
+  http://wiki.dwscoalition.org/notes/Contributor_Licensing_Agreement
+
+Community
+=========
+
+There is a thriving community of Dreamwidth pioneers, including coders,
+designers, testers, and others; most of us live on IRC at irc.freenode.net,
+on the #dreamwidth channel. If you have a query or concern, you can often get
+an answer in real-time here. (If you're not sure how to join us, take a look
+at http://wiki.dwscoalition.org/notes/IRC_help .)
+
+There is also a sister channel, #dreamwidth-dev, specifically for developers.
+You'll never be derided for anything in either channel, so don't worry that
+you might ask a stupid question; there are no stupid questions. :)
+
+We also have two development communities on Dreamwidth:
+  * http://dw-dev.dreamwidth.org/profile
+      This community is for general discussion on Dreamwidth development.
+
+  * http://dw-dev-training.dreamwidth.org/profile
+      This community is focused more on helpful tips on working with Dreamwidth
+      code, or even coding in general. You'll probably find something here even
+      if you're an experienced coder, so do take a look.
+
+You can find me, Sophie, on all four of these places. My Dreamwidth username
+is "sophie", and my IRC nickname is "Sophira".
+
+Please feel free to join us!
+
+Dreamhack Structure
+===================
+
+The following is an explanation of the files/directories you will find in your
+home directory:
+
+  * apache/
+      This directory contains your Apache instance configuration and log files.
+      You are free to modify your Apache configuration (in apache/conf/httpd.conf)
+      as necessary. However, please note the following:
+
+      * Your Apache config is configured to listen on 127.0.0.1 on a high port
+        (>8080). *This is correct*, so please do not change it; Web requests
+        are routed through a perlbal installation which allows you to use port
+        80 as normal.
+      * Please do not change the min/max* settings without good reason. If you
+        feel they could be set to better values, let me know. :)
+
+  * bin/
+      This directory is the first entry in your PATH environment variable, and
+      contains the following scripts:
+
+        * cvsreport.pl - this is a symlink to the real cvsreport.pl, for ease
+                         of use.
+        * start-apache - starts your Apache instance.
+        * stop-apache  - stops your Apache instance.
+        * tocvs.real   - this isn't directly executable - instead, it's
+                         aliased in your ~/.bashrc and sourced. Use 'tocvs'
+                         to switch between your /cvs and live directories
+                         easily.
+
+      If you need more scripts in your PATH, this is the place to add them. A
+      selection of scripts, as well as full documentation on 'tocvs', can be
+      found at:
+        http://wiki.dwscoalition.org/notes/Dev_Maintenance#Scripting
+
+  * dw/
+      This is where your Dreamhack installation lives, and is the target of the
+      LJHOME environment variable - so this is where you'll be spending most of
+      your time. ;)
+
+  * crontab-import
+      This file contains a sample crontab which you may import if you need to.
+      Instructions on doing so are contained in the file.
+
+Epilogue
+========
+
+Hopefully, this should be all the information you need to get started. Should
+you need any more information, please feel free to contact me at
+<sophie@hack.dreamwidth.net>, or find me on #dreamwidth IRC as "Sophira".
+
+ - Sophie.

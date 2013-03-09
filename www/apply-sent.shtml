@@ -1,0 +1,8 @@
+<!--#set var="title" value="Apply" -->
+<!--#include virtual="/_header.shtml" -->
+          <h1>Apply</h1>
+          <h2>Sent Successfully</h2>
+          <p>Your application for a Dreamhack has been sent successfully. Please note that it may
+          take a day or so for your application to be processed. You will receive an email with
+          more information once this occurs.</p>
+<!--#include virtual="/_footer.html" -->

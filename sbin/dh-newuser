@@ -1,0 +1,599 @@
+#!/bin/bash
+
+# variables to tweak
+DHNAME="Dreamhack"				# the name of the service
+
+DOMAIN="hack.dreamwidth.net"			# the domain that should be used in the URL
+SSHDOMAIN="hack.dreamwidth.net"			# the domain of the SSH server. If empty, this is the same as $DOMAIN.
+LISTENIP="127.0.0.1"				# the IP to listen on
+
+BASEDIR="/dreamhack"				# base directory for Dreamhack stuff
+LIBDIR="$BASEDIR/lib/bin"			# support scripts
+SKELDIR="$BASEDIR/var/skel"			# the directory to copy for the initial home directory
+
+BASEHOMEDIR="$BASEDIR/home"			# the directory that home directories should live under - this can be anything you want
+NONFREE=1					# copy over the dw-nonfree repository?
+
+USERPREFIX="dh"					# the prefix used for both UNIX and database usernames
+						# UNIX users get "$USERPREFIX-", database users get "$USERPREFIX_"
+DHGROUP="dreamhack"				# the group all created users should be a part of - this must be created first with groupadd.
+USERSHELL="/bin/bash"				# the shell the created user should get
+USERHARDQUOTA=512000				# the hard quota that should be given, in blocks.
+						# (needs kernel and filesystem quota support; use 0 to disable)
+
+MYSQLUSER="root"				# a MySQL user that has permission to create users and databases
+MYSQLPASSWORD=''			        # CHANGETHIS the password for the above MySQL user
+DBPREFIX="dreamhack"				# the prefix for the database name
+						# database user prefixes are controlled by USERPREFIX, above.
+
+# mail settings
+MAILFROM="sophie@hack.dreamwidth.net"		# the address that the auto-generated email should come from
+MAILFROMNAME="Sophie"				# the name that is used in the From field
+MAILSUBJECT="Your $DHNAME has been created"	# the subject line of the email.
+
+DHVERSION="5"					# the version of Dreamhacks we're creating
+
+# we check the below file to make sure it exists. If it doesn't, we warn.
+CHECKFILE="/dreamhack/home/7000-daily/apache/etc/httpd.pid"
+
+# -----
+
+if [ $UID -ne 0 ]; then
+  echo "This script needs to be run as root."
+  exit 1
+fi
+
+if [ "$SSHDOMAIN" == "" ]; then
+  SSHDOMAIN="$DOMAIN"
+fi
+
+DELETE=0
+
+if [ "$1" == "--delete" ]; then
+  DELETE=1
+  shift
+fi
+
+USERNAME=$1
+PORT=$2
+EMAIL=$3
+PREFNAME=$4
+LJUSER=$5
+DWUSER=$6
+AUTOMATIC=$7
+
+UHOME=$BASEHOMEDIR/$PORT-$USERNAME
+UNIXUSER=$USERPREFIX-$USERNAME
+LJHOME=$UHOME/dw
+
+ERROR=0
+if [ "$USERNAME" == "" ]; then
+  echo "Please supply the desired username!"
+  ERROR=1
+else
+  if [[ "$USERNAME" =~ ^dh- ]]; then
+    echo "Supplied usernames should not start with 'dh-' - this gets added automatically!"
+    ERROR=1
+  else
+    echo "  User: '$USERNAME'"
+  fi
+fi
+
+if [ "$PORT" == "" ]; then
+  echo "Please supply a port number!"
+  ERROR=1
+else
+  echo "  Port: '$PORT'"
+fi
+
+if [ "$DELETE" == "1" ]; then
+  if [ "$ERROR" == "1" ]; then
+    echo "Errors detected, please correct these before running again."
+    exit 1
+  fi
+
+  if [ "$EMAIL" == "force" ]; then
+    echo "Forcing delete."
+    FORCE=1
+  fi
+
+  echo "Deleting this user in 10 seconds... (Ctrl-C to abort)"
+  sleep 10
+
+  echo "Begin delete process:"
+  # kill their apache process, if any
+  echo "Stopping apache..."
+  if [ "$FORCE" == "1" ]; then
+    APACHEDIR="/dreamhack/home/$PORT-$USERNAME/apache"
+  else
+    APACHEDIR=`$LIBDIR/get-apache-dir $PORT`
+  fi
+  if [ "$?" == "1" ]; then
+    echo "No Apache directory in database! Aborting for sanity check."
+    exit 1
+  fi
+
+  /usr/sbin/apache2ctl -f $APACHEDIR/conf/httpd.conf -k stop
+  sleep 3
+
+  echo "Removing from database..."
+  $LIBDIR/delete-from-db $USERNAME $PORT $FORCE || exit 1
+
+  if [ "$FORCE" == "1" ]; then
+    echo "Deleting crontab..."
+    crontab -u $UNIXUSER -r
+
+    echo "Deleting user and homedir..."
+    userdel -r $UNIXUSER
+
+    echo "Deleting MySQL user and database..."
+    # delete mysql user
+    mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP USER '${USERPREFIX}_$USERNAME'@'localhost'" 
+
+    # delete mysql database 
+    mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${DBPREFIX}_$USERNAME\`"
+  else
+    APACHESLEFT=`$LIBDIR/get-apaches $USERNAME`
+    if [ "$APACHESLEFT" == "" ]; then
+      echo "No Apaches left."
+      echo "Deleting crontab..."
+      crontab -u $UNIXUSER -r
+
+      echo "Deleting user and homedir..."
+      userdel -r $UNIXUSER
+
+      echo "Deleting MySQL user and database..."
+      # delete mysql user
+      mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP USER '${USERPREFIX}_$USERNAME'@'localhost'" 
+
+      # delete mysql database 
+      mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${DBPREFIX}_$USERNAME\`"
+    else
+      echo "Some Apaches still left, not deleting other stuff"
+    fi
+  fi
+  echo "Updating perlbal..."
+  # delete perlbal setup
+  rm /home/perlbal/sites/$PORT-$USERNAME.conf
+  /etc/init.d/perlbal restart
+
+  echo "Done!"
+  exit 0
+fi
+
+if [ "$EMAIL" == "" ]; then
+  echo "Please supply an email address!"
+  ERROR=1
+else
+  echo " Email: '$EMAIL'"
+fi
+
+if [ "$PREFNAME" == "" ]; then
+  echo "Please supply a preferred name!"
+  ERROR=1
+else
+  echo "  Name: '$PREFNAME'"
+fi
+
+# this is optional
+if [ "$LJUSER" == "" ]; then
+  LJUSER="-"
+fi
+echo "LJuser: '$LJUSER'"
+
+# so is this
+if [ "$DWUSER" == "" ]; then
+  DWUSER="-"
+fi
+echo "DWuser: '$DWUSER'"
+
+# and this
+if [ "$AUTOMATIC" == "" ]; then
+  AUTOMATIC="0"
+else
+  AUTOMATIC="1"
+fi
+echo "  Auto: '$AUTOMATIC'"
+
+perl -e 'eval { require MIME::Base64; }; exit(2) if ($@);'
+if [ "$?" == "2" ]; then
+  echo "This setup script requires the Perl module MIME::Base64 as part of its password creation process."
+  ERROR=1
+else
+  echo "MIME::Base64 present :D"
+fi
+
+groupmod $DHGROUP
+if [ $? -ne 0 ]; then
+  echo "You need to add the '$DHGROUP' group to the system first using 'groupadd $DHGROUP'. If you want to change this group name, alter the DHGROUP variable."
+  ERROR=1
+else
+  echo "Group '$DHGROUP' exists :D"
+fi
+
+id $UNIXUSER > /dev/null 2>/dev/null
+if [ "$?" -eq 0 ]; then
+  echo "A user called $UNIXUSER already exists."
+  ERROR=1
+else
+  echo "Username '$UNIXUSER' available :D"
+fi
+
+if [ "$ERROR" == "1" ]; then
+  echo "Errors detected, please correct these before running again."
+  exit 1
+fi
+
+unset ERROR
+
+if [ ! -f "$CHECKFILE" ]; then
+  echo "***** The user looks good, but $CHECKFILE doesn't exist."
+  echo "***** This might mean that it might not be a good idea to make new accounts right now."
+  echo "***** Sleeping for 10 seconds (Ctrl-C to abort)..."
+  sleep 10
+  echo
+fi
+
+echo "This user will be '$UNIXUSER' and their home directory will be $UHOME"
+echo "About to set up this user... hit Ctrl-C in the next 10 seconds to abort."
+sleep 10
+echo -n "Continuing. Time now: "
+date
+
+# create the user
+echo Creating user...
+useradd -c "$PREFNAME" -g $DHGROUP -K UMASK=0077 -d $UHOME -s /bin/bash $UNIXUSER 
+if [ "$USERHARDQUOTA" != "0" ]; then
+  setquota $UNIXUSER 0 $USERHARDQUOTA 0 0 /
+fi
+# create a password
+PASSWORD=$(dd if=/dev/urandom bs=1 count=9 | perl -MMIME::Base64 -e 'print encode_base64(<STDIN>);')
+echo "$UNIXUSER:$PASSWORD" | chpasswd
+
+echo Changing shell...
+chsh --shell $USERSHELL $UNIXUSER
+echo Copying home directory...
+cp -a $SKELDIR $UHOME
+echo Creating a .forward...
+echo $EMAIL > $UHOME/.forward    # any mail sent to this account will go to the email address in .forward.
+echo Creating custom httpd.conf...
+cat > $UHOME/apache/conf/httpd.conf <<HTTPDCONF
+ServerRoot $UHOME/apache
+ServerName $USERNAME.$DOMAIN
+
+PidFile etc/httpd.pid
+LockFile etc/accept.lock
+Timeout 30
+KeepAlive Off
+
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
+CustomLog logs/access_log combined
+ErrorLog logs/error_log
+
+Listen $LISTENIP:$PORT
+User $UNIXUSER
+Group $DHGROUP
+
+MinSpareServers 1
+MaxSpareServers 2
+StartServers 2
+MaxClients 2
+MaxRequestsPerChild 100
+
+UseCanonicalName off
+SendBufferSize 163840
+
+DocumentRoot $LJHOME/htdocs
+<Directory "$LJHOME/htdocs">
+    Options -Indexes FollowSymLinks MultiViews
+    AllowOverride All
+</Directory>
+
+LoadModule apreq_module /usr/lib/apache2/modules/mod_apreq2.so
+LoadModule perl_module /usr/lib/apache2/modules/mod_perl.so
+LoadModule dir_module /usr/lib/apache2/modules/mod_dir.so
+
+PerlSetEnv   LJHOME $LJHOME
+PerlRequire  $LJHOME/cgi-bin/modperl.pl
+
+LoadModule mime_module /usr/lib/apache2/modules/mod_mime.so
+TypesConfig /etc/mime.types
+
+HTTPDCONF
+
+echo chowning to correct user:group...
+chown -R $UNIXUSER:$DHGROUP $UHOME
+echo setting rwx--x--x on home directory...
+chmod 711 $UHOME
+
+# grab the latest multicvs.conf, cvsreport.bl, vcv, and update the code (to save us
+# having to update twice). We start out with the dw-free repository not having a
+# working copy, to save space and time; a working copy is automatically produced
+# when cvsreport.pl updates.
+
+# FIXME: Put back the normal multicvs.conf line when Data-ObjectDriver stuff is fixed
+# Also fix update-skel
+su -lc "
+  PS1=blah source $UHOME/.bashrc
+  cp -a $BASEDIR/opt/dhroot/cvs/multicvs.conf $LJHOME/cvs/multicvs.conf
+  wget -O $LJHOME/cvs/multicvs.conf http://hg.dwscoalition.org/dw-free/raw-file/tip/cvs/multicvs.conf
+
+# FIXME: We'll need to comment out the Data-ObjectDriver line, remove when bug 2463 is fixed
+#  replace \"SVN(Data-ObjectDriver)\" \"#SVN(Data-ObjectDriver)\" -- $LJHOME/cvs/multicvs.conf
+
+  mkdir $LJHOME/bin
+  wget -O $LJHOME/bin/cvsreport.pl http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/cvsreport.pl
+  wget -O $LJHOME/bin/vcv http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/vcv
+  chmod ugo+rx $LJHOME/bin/cvsreport.pl $LJHOME/bin/vcv
+  $LJHOME/bin/cvsreport.pl -u
+" $UNIXUSER
+ 
+# we need to explicitly force dw-free to the tip, as we started off without a
+# working copy
+su -lc "
+  cd $LJHOME/cvs/dw-free
+  hg update -C tip
+" $UNIXUSER
+
+if [ "$NONFREE" == "1" ]; then
+  # clone the dw-nonfree repo
+  su -lc "
+    cd $LJHOME/cvs
+    hg clone http://hg.dwscoalition.org/dw-nonfree dw-nonfree
+    cp dw-nonfree/cvs/multicvs-local.conf $LJHOME/cvs/multicvs-local.conf
+  " $UNIXUSER
+fi
+
+# now copy all that over to the right places
+su -lc "
+  PS1=blah source $UHOME/.bashrc
+  $LJHOME/bin/cvsreport.pl -s -c
+" $UNIXUSER
+
+# copy the wgetted files from the CVS to the bin/ with -a, so that the timestamping works
+su -lc "
+  cp -a $LJHOME/cvs/dw-free/cvs/multicvs.conf $LJHOME/cvs/multicvs.conf
+  cp -a $LJHOME/cvs/dw-free/bin/cvsreport.pl $LJHOME/bin/cvsreport.pl
+  cp -a $LJHOME/cvs/dw-free/bin/vcv $LJHOME/bin/vcv
+" $UNIXUSER
+
+# FIXME: We'll need to comment out the Data-ObjectDriver line again, remove when bug 2463 is fixed
+#replace "SVN(Data-ObjectDriver)" "#SVN(Data-ObjectDriver)" -- $LJHOME/cvs/multicvs.conf
+
+# put a crontab file in the user's home directory, but don't load
+# it; we'll give them instructions on that later on.
+cat > $UHOME/crontab-import <<CRON
+LJHOME=$LJHOME
+
+# This file defines a crontab you may wish to import. Your account
+# as created has no crontab; to import this one, use the following
+# command:
+#   crontab ~/crontab-import
+#
+# Please only import the crontab if you need to.
+# ---
+# Errors from any of these jobs will, by default, be sent to
+# the email address used to create this account. You can change
+# this by editing the ~/.forward file to use another email
+# address, or delete the file to use the local account mailbox
+# instead.
+# ---
+# The crontab entries below are various utilities designed for a
+# normal DW installation. You may or may not need them; as such,
+# they have all been commented out on $DHNAME initially apart
+# from the clean_caches one. Please uncomment only the scripts
+# which you will need.
+
+# Essential:
+# format: minute, hour, day of month, month, day of week
+0 12 * * * \$LJHOME/bin/ljmaint.pl clean_caches >/dev/null
+
+# Optional, if you want birthday mail, and the random user feature:
+# (you can remove parts)
+#5 1 * * * \$LJHOME/bin/ljmaint.pl bdaymail build_randomuserset >/dev/null
+
+# If you want statistics:
+#30 1 * * * \$LJHOME/bin/ljmaint.pl genstats genstatspics genstats_size >/dev/null
+#5 2 * * 0 \$LJHOME/bin/ljmaint.pl genstats_weekly > /dev/null
+
+# Various tasks
+#15 1 * * * \$LJHOME/bin/ljmaint.pl joinmail > /dev/null
+#30 * * * * \$LJHOME/bin/ljmaint.pl synsuck > /dev/null
+#5 2 * * 0 \$LJHOME/bin/ljmaint.pl memeclean > /dev/null
+
+# If you're running a high-load site with \$LJ::BUFFER_QUERIES on,
+# there's another one to install:
+#*/5 * * * * \$LJHOME/bin/qbufferd.pl >/dev/null
+CRON
+chown $UNIXUSER:$DHGROUP $UHOME/crontab-import
+
+# Set up MySQL
+mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "CREATE DATABASE \`${DBPREFIX}_$USERNAME\`"
+mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "GRANT ALL PRIVILEGES ON \`${DBPREFIX}_$USERNAME\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD'"
+
+# create initial LJ config and tweak it for the installation
+cp -a $LJHOME/doc/ljconfig.pl.txt $LJHOME/etc/ljconfig.pl
+cp -a $LJHOME/doc/config-local.pl.txt $LJHOME/etc/config-local.pl
+cp -a $LJHOME/doc/config-private.pl.txt $LJHOME/etc/config-private.pl
+chmod go-rwx $LJHOME/etc/config-private.pl
+
+# edit the config to put the right domain in
+replace "\$DOMAIN = \"ljsite.com\"" "\$DOMAIN = \"$USERNAME.$DOMAIN\"" -- $LJHOME/etc/config-private.pl
+
+# do the config replacements for MySQL, and other stuff
+# we'll call out to another script for this as it's too hard to do properly in bash
+$LIBDIR/do-config-stuff $LJHOME/etc $USERNAME $DBPREFIX $USERPREFIX $PASSWORD
+
+# populate the database and run texttool, and start the server
+NOTES=""
+su -lc "
+  PS1=blah source $UHOME/.bashrc
+
+ \$LJHOME/bin/upgrading/update-db.pl -r --innodb
+ \$LJHOME/bin/upgrading/update-db.pl -r --cluster=all --innodb
+ \$LJHOME/bin/upgrading/update-db.pl -p
+ \$LJHOME/bin/upgrading/texttool.pl load
+" $UNIXUSER
+
+# set up the TheSchwartz database
+su -lc "
+  PS1=blah source $UHOME/.bashrc
+#  \$LJHOME/bin/ljdb < \$LJHOME/cvs/TheSchwartz/doc/schema.sql
+  \$LJHOME/bin/ljdb < /usr/share/doc/libtheschwartz-perl/schema.sql
+" $UNIXUSER
+
+if [ "$AUTOMATIC" == "0" ]; then
+#  echo "Starting Apache..."
+#  su -lc "start-apache" $UNIXUSER
+#
+#  if [ ! -f $UHOME/apache/etc/httpd.pid ]; then
+#    echo "Apache didn't start, including note in email."
+#    # flag this for inclusion in the email
+#    NOTES="
+#  
+#The automatic $DHNAME setup script failed to start Apache. This could be
+#because of problems within the DW code as it currently stands. You may want to
+#try updating the code by following the instructions at:
+#  http://wiki.dwscoalition.org/notes/Dev_Maintenance
+#
+#To start the server again, use the following command:
+#  start-apache"
+#  fi
+  echo "Not starting Apache for new Dreamhacks."
+else
+  echo "Skipping Apache startup."
+fi
+
+echo "Creating .firstlogin..."
+touch $UHOME/.firstlogin
+chown $UNIXUSER:$DHGROUP $UHOME/.firstlogin
+
+echo "Setting up perlbal..."
+PERLBAL="CREATE POOL ${USERNAME}_pool
+  POOL ${USERNAME}_pool ADD $LISTENIP:$PORT
+
+CREATE SERVICE $USERNAME
+  SET role            = reverse_proxy
+  SET pool            = ${USERNAME}_pool
+  SET persist_client  = on
+  SET persist_backend = on
+  SET verify_backend  = on
+ENABLE $USERNAME
+
+VHOST dreamhack *.$USERNAME.$DOMAIN = $USERNAME"
+
+cat > /home/perlbal/sites/$PORT-$USERNAME.conf <<STUFF
+$PERLBAL
+STUFF
+chown perlbal:perlbal /home/perlbal/sites/$PORT-$USERNAME.conf
+
+$LIBDIR/cmds-to-perlbal <<STUFF
+$PERLBAL
+STUFF
+
+echo "Adding user to database..."
+# make a temp file to store our details
+TEMPFILE=`mktemp` || exit 1
+cat > $TEMPFILE <<TEMP
+$USERNAME
+$LJUSER
+$DWUSER
+$UNIXUSER
+$PREFNAME
+$UHOME
+$EMAIL
+$DHVERSION
+$PORT
+apache
+$USERNAME.$DOMAIN
+TEMP
+# call out to a Perl script for this
+$LIBDIR/add-to-db $TEMPFILE
+rm $TEMPFILE
+
+#if [ "$DOMAIN" != "$WEBDOMAIN" ]; then
+#  echo "Setting up perlbal on the old server..."
+#  OLDPERLBAL="CREATE POOL newserv_${USERNAME}_pool
+#    POOL newserv_${USERNAME}_pool ADD 67.207.129.41:80
+#
+#  CREATE SERVICE newserv_$USERNAME
+#    SET role            = reverse_proxy
+#    SET pool            = newserv_${USERNAME}_pool
+#    SET persist_client  = on
+#    SET persist_backend = on
+#    SET verify_backend  = off
+#  ENABLE newserv_$USERNAME
+#
+#  VHOST dreamhack *.$USERNAME.$DOMAIN = newserv_$USERNAME"
+#
+#  FILE=`mktemp`
+#  echo "$OLDPERLBAL" > $FILE
+#  OLDFILE=`ssh oldhack-transfer \"mktemp\"`
+#  scp "$FILE" "oldhack-transfer:$OLDFILE"
+#  OLDCONF="/home/perlbal/sites/new-$PORT-$USERNAME.conf"
+#  POSSEXIST="/home/perlbal/sites/$PORT-$USERNAME.conf"
+#  ssh oldhack-transfer "
+#mv \"$OLDFILE\" $OLDCONF
+#chown perlbal:perlbal $OLDCONF
+#mv $POSSEXIST $POSSEXIST.bak 2>/dev/null
+#/etc/init.d/perlbal restart
+#"
+
+#  cat > /home/perlbal/sites/$PORT-$USERNAME.conf <<STUFF
+#$PERLBAL
+#STUFF
+#  chown perlbal:perlbal /home/perlbal/sites/$PORT-$USERNAME.conf
+#
+#  $LIBDIR/cmds-to-perlbal <<STUFF
+#$PERLBAL
+#STUFF
+#  if [ "$SSHDOMAIN" != "$DOMAIN" ]; then
+#    NOTES="
+#
+#Please note that the SSH/SFTP server to use, \"$SSHDOMAIN\",
+#is not the same as the domain in your URL, \"$DOMAIN\"!
+#This is a temporary measure due to a server upgrade taking place. The
+#URL given will always point to the correct server, but it is possible
+#that some of the documentation on our wiki (see below) might not have
+#been changed to use the new SSH server name yet.$NOTES"
+#  fi
+#fi
+
+echo -n "All done! Finished at: "
+date
+
+if [ "$AUTOMATIC" == "0" ]; then
+  echo "Sending email..."
+  EMAILMSG="Hi $PREFNAME!
+
+Your $DHNAME installation has been set up. Its allocated URL is:
+
+  http://www.$USERNAME.$DOMAIN/
+
+Please note that your Dreamhack has not been started, so the above
+URL will not work immediately. In order to start it, you must log
+into the SSH server at $SSHDOMAIN with the following
+credentials, and type 'start-apache' at the prompt:
+  Username: $UNIXUSER
+  Password: $PASSWORD
+
+For reference, your home directory is $UHOME.$NOTES
+
+The rest of this email is duplicated in the README file in your home
+directory, for your convenience.
+
+=========="
+
+  sendmail -f $MAILFROM $EMAIL <<EMAIL
+From: "$MAILFROMNAME" <$MAILFROM>
+To: "$USERNAME" <$EMAIL>
+Subject: $MAILSUBJECT
+
+$EMAILMSG
+`cat $UHOME/README`
+EMAIL
+  echo "Sent!"
+else
+  echo "Not sending email."
+fi
+

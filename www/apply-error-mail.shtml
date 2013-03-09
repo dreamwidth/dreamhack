@@ -1,0 +1,8 @@
+<!--#set var="title" value="Apply" -->
+<!--#include virtual="/_header.shtml" -->
+          <h1>Apply</h1>
+          <h2>Error Sending Application</h2>
+          <p>A problem was encountered while trying to email your application. This isn't
+          your fault. Please <a href="mailto:sophie@hack.dreamwidth.net">tell Sophie about
+          this error</a>.</p>
+<!--#include virtual="/_footer.html" -->

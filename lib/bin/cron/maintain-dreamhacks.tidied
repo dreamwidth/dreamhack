@@ -1,0 +1,447 @@
+#!/usr/bin/perl
+
+use File::Temp qw(tempfile);
+use Passwd::Unix qw(passwd gecos home uid gid);
+use Mail::Send;
+
+my $lockfile = "/dreamhack/var/lock/maintain-dreamhacks.pid";
+if (-f $lockfile) {
+  open(PID, "<:encoding(ascii)", $lockfile);
+  my $pid = <PID>;
+  close(PID);
+  chomp($pid);
+  if (kill(0, $pid)) { die "maintain-dreamhacks already running\n"; }
+}
+
+open(PID, ">:encoding(ascii)", $lockfile);
+print PID "$$\n";
+close(PID);
+
+my $maintaindir = "/dreamhack/var/maintain.d";
+
+opendir(DIR, $maintaindir);
+my @files = readdir(DIR);
+closedir(DIR);
+
+foreach my $file (@files) {
+  my $full = "$maintaindir/$file";
+  next if (!(-f $full));
+  my ($uid, $gid) = (stat($full))[4, 5];
+  my $username = getpwuid($uid);
+  my @outlines = ();
+  open(FILE, "<:encoding(ascii)", $full);
+  while (<FILE>) {
+    my $line = $_;
+    chomp($line);
+    next if (($line=~/^\s*$/) || ($line=~/^#/));
+    my ($command, @args) = split(/ +/, $line);
+    my ($output, @newcommands) = doMaintain($full, $command, $username, @args);
+    if (@newcommands) { push(@outlines, @newcommands); }
+    if ($output) { print STDERR $output . "\n"; }
+  }
+  close(FILE);
+  if (@outlines) {
+    my ($fh, $fn) = tempfile();
+    print $fh join("\n", @outlines) . "\n";
+    close($fh);
+    chown($uid, $gid, $fn);
+    unlink($full);
+    rename($fn, $full);
+  }
+  else {
+    unlink($full);
+  }
+}
+
+unlink($lockfile);
+exit(0);
+
+sub doMaintain {
+  my ($filename, $command, $username, @args) = @_;
+
+  $command = lc($command);
+  my ($output, $newcommands);
+  if ($command eq "reinstall") {
+    ($output, $newcommands) = &cmdReinstall;
+  }
+  elsif ($command eq "edit-dreamhack-info") {
+    ($output, $newcommands) = &cmdEditDreamhackInfo;
+  }
+  elsif ($command eq "set-version") {
+    ($output, $newcommands) = &cmdSetVersion;
+  }
+  else {
+    $output = "Unknown command: '$command'";
+  }
+  my @newcommands;
+  if (defined($newcommands)) { @newcommands = @{$newcommands}; }
+
+  return ($output, @newcommands);
+}
+
+sub cmdReinstall {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  if ($args[0] && $args[0] eq "--immediate") {
+    my $reqtime = $args[1];
+    if (time() - $reqtime < 60) {
+      # keep this command for next time
+      push(@newcommands, "$command " . join(" ", @args));
+    }
+    else {
+      # we can do this
+      open(PIPE, "|/usr/bin/write $username");
+      print PIPE <<MESSAGE;
+[this is an automatic message]
+
+Your Dreamhack will now be reinstalled. You will be emailed when the process is
+complete.
+MESSAGE
+      close(PIPE);
+
+      # sleep to give time for the notice to go through
+      sleep 5;
+
+      # grab their (encrypted) password
+      my $userinfo = {
+        password     => passwd($username),
+        ports        => [],
+        ssh_username => $username,
+      };
+
+      # if they had an authorized_keys file, grab that too
+      my $userhome = home($username);
+      my $authkeysfile = "$userhome/.ssh/authorized_keys";
+      my $authkeys;
+      if (-f $authkeysfile) {
+        my $oldumask = umask(0077);   # this is sensitive information
+        my ($fh, $fn) = tempfile();
+        binmode($fh);
+        open(AUTHKEYS, "<:raw", $authkeysfile);
+        while (<AUTHKEYS>) {
+          print $fh $_;
+        }
+        close(AUTHKEYS);
+        close($fh);
+        umask($oldumask);
+        $authkeys = $fn;
+      }
+
+      # grab some more information from the database that we need to keep
+      # before deleting the user entirely
+      require '/dreamhack/lib/dreamhacks-db.pl';
+      my $sth = $dbh->prepare("SELECT `username`, `email`, `preferred_name`, `lj_username`, `dw_username`, `irc_nick` FROM users WHERE `ssh_username` = ?");
+      $sth->execute($username);
+      my $error = 0;
+      if (my $hash = $sth->fetchrow_hashref()) {
+        foreach my $key (keys %{$hash}) {
+          $userinfo->{$key} = $hash->{$key};
+        }
+
+        # now fetch port information
+        my $sth = $dbh->prepare("SELECT `port` FROM `userports` WHERE `username` = ?");
+        $sth->execute($userinfo->{'username'});
+        while (my ($port) = $sth->fetchrow_array()) {
+          push(@{$userinfo->{'ports'}}, $port);
+        }
+        if (@{$userinfo->{'ports'}} == 0) { $error = 1; }
+      }
+      else {
+        $error = 1;
+      }
+      if ($error == 1) {
+        # a problem :(
+        return makeError($username, "Could not fetch the necessary information from the database for a reinstall.", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+There was a problem retrieving the necessary information from the database
+needed to rebuild your Dreamhack. As a result, your account has not been
+changed. Please contact Sophie <sophie\@hack.dreamwidth.net> and ask for
+a manual delete/reinstall.
+MESSAGE
+      }
+
+      # we know we can rebuild now, so kill with extreme prejudice
+      passwd($username, "!");   # stop them from logging back in again
+      system("skill -KILL -u $username");
+
+      # delete everything
+      foreach my $port (@{$userinfo->{'ports'}}) {
+        my $errcode = system("/dreamhack/sbin/dh-deluser " . $userinfo->{'username'} . " $port");
+        if ($errcode) {
+          return makeError($username, "A problem occurred deleting the user.", "Your Dreamhack could not be rebuilt", <<MESSAGE, 1);
+There was a problem deleting your existing account. You may not be able to log
+back in.
+
+Please contact Sophie <sophie\@hack.dreamwidth.net> for more help, and ask for
+a manual delete/reinstall.
+MESSAGE
+        }
+      }
+
+      # rebuild
+      use Data::Dumper;
+      print Dumper($userinfo);
+      my $ljuser = $userinfo->{'lj_username'};
+      my $dwuser = $userinfo->{'dw_username'};
+      my $cmd = "/dreamhack/sbin/dh-newuser " . $userinfo->{'username'}      . " " .
+                                                (@{$userinfo->{'ports'}})[0] . " " .
+                                                $userinfo->{'email'}         . " " .
+                                                "\"" . $userinfo->{'preferred_name'} . "\" " .
+                                                (defined($ljuser) ? $ljuser : "-") . " " .
+                                                (defined($dwuser) ? $dwuser : "-") . " " .
+                                                "1";   # don't automatically email or start up yet
+      print "Executing command: '$cmd'\n";
+      my $errcode = system($cmd);
+      if ($errcode) {
+        return makeError($username, "A problem occurred creating the user.", "Your Dreamhack could not be rebuilt", <<MESSAGE, 1);
+There was a problem creating your new account. You may not be able to log back
+in.
+
+Please contact Sophie <sophie\@hack.dreamwidth.net> for more help, and ask for
+a manual delete/reinstall.
+MESSAGE
+      }
+
+      # reset their password
+      passwd($username, $userinfo->{'password'});
+
+      # put their authorized_keys file back if they had one
+      if (defined($authkeys)) {
+        my $userhome = home($username);   # get the new home, just in case it changed
+        my $authkeysfile = "$userhome/.ssh/authorized_keys";   # ditto
+        rename($authkeys, $authkeysfile);
+        chown(uid($username), gid($username), $authkeysfile);
+      }
+
+      # finally, turn their Apache on
+      $sth = $dbh->prepare("SELECT `domain`, `homedir`, `apachedir` FROM `users` LEFT OUTER JOIN `userports` USING (`username`) WHERE `port` = ?");
+      $sth->execute((@{$userinfo->{'ports'}})[0]);
+      my ($domain, $homedir, $apachedir) = $sth->fetchrow_array();
+
+      system("su -lc \"/usr/sbin/apache2ctl -f $homedir/$apachedir/conf/httpd.conf -k start\" $username");
+      sleep 3;
+      my $notes = (-f "$homedir/$apachedir/etc/httpd.pid" ? "" : "
+      
+However, your Apache instance could not be automatically started. This may be
+due to problems within the DW code as it currently stands. You may want to try
+updating the code by following the instructions at:
+http://wiki.dwscoalition.org/notes/Dev_Maintenance
+
+To start the server again, use the following command:
+start-apache");
+
+      # get their MySQL password for inclusion in the email
+      my $privpass = undef;
+      my $privfile = "$homedir/dw/etc/config-private.pl";
+      if (-f $privfile) {
+        open(PRIVATE, "<:encoding(ascii)", $privfile);
+        while (<PRIVATE>) {
+          my $line = $_;
+          chomp($line);
+          if ($line=~/^ +'pass' => '([^']+)',/) { $privpass = $1; last; }
+        }
+        close(PRIVATE);
+      }
+      my $privpara = <<PARA;
+Unfortunately, this script couldn't work out what your new database password
+is, possibly due to a change in the style of the configuration files. You
+should be able to find it yourself in the dw/etc/config-private.pl file, though.
+PARA
+      if (defined($privpass)) {
+        $privpara = <<PARA;
+For reference, your new database password is "$privpass". Note that anything
+which asks for this password from the original email will need to use the one
+from this email instead.
+PARA
+      }
+      # we're done! Send an email to let them know.
+      my $msg = new Mail::Send(
+                                subject => "Your Dreamhack has been rebuilt!",
+                                to      => $username,
+                                bcc     => 'sophie',
+                              );
+      $msg->set("From", '"Sophie" <sophie@hack.dreamwidth.net>');
+      my $fh = $msg->open();
+      print $fh <<MESSAGE;
+[this is an automatic message]
+
+Your Dreamhack has been successfully rebuilt and is available at:
+
+http://www.$domain/$notes
+
+Your SSH password is the same as it was before the rebuild, so you should be
+able to log in with the same credentials. The database password has changed,
+however, so you should take note of the new value in your etc/config-private.pl
+file in case you need it.
+
+If you had one, your ~/.ssh/authorized_keys file has also been retained.
+
+$privpara
+Please review the README file in your home directory in case there have been
+any changes that you may need to be aware of.
+
+Thank you!
+
+- Sophie.
+MESSAGE
+      $fh->close();
+    }
+  }
+  else {
+    push(@newcommands, "reinstall --immediate " . time());
+    open(PIPE, "|/usr/bin/write $username");
+    print PIPE <<MESSAGE;
+[this is an automatic message]
+
+A request to reinstall your Dreamhack has been received.
+
+Within the next 60 seconds, you can cancel this request with the following
+command:
+
+rm $filename
+
+If the reinstall continues, you will be logged out and your account will be
+completely rebuilt from scratch - that is, your account and home directory will
+be deleted and reinstalled as if for a new user. Your password (and your
+~/.ssh/authorized_keys file, if any) will be copied over, and you will receive
+an email once the reinstall is complete, which will take about 2-3 minutes.
+Your Apache instance will also be automatically started.
+
+If you have any data you need to backup, please CANCEL this request and do so
+now; the reinstall process will wipe your entire home directory.
+MESSAGE
+    close(PIPE);
+    push(@output, "Queued reinstall for $username.");
+  }
+  my $output = join("\n", @output);
+  return ($output, \@newcommands);
+}
+
+sub cmdEditDreamhackInfo {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  my @humanerrs = ();
+  my @sql = ();
+  my @sqlargs = ();
+  # go through the arguments
+  my %validargs = (
+    lj_username => 1,
+    dw_username => 1,
+    irc_nick => 1,
+    preferred_name => 1,
+  );
+
+  my $newprefname = undef;
+  my $args = join(" ", @args);
+  while ($args=~/(?:^| )([^=]+)="([^"]*)"/g) {
+    my ($var, $value) = ($1, $2);
+    if (!defined($validargs{$var})) {
+      push(@humanerrs, "Cannot set '$var' to '$value' as it is not an allowed name.");
+    }
+    else {
+      # check the values before adding them
+      if (length($value) > 255) { print STDERR "Error: Value for '$var' is over 255 characters.\n"; $error = 1; }
+      if (($var eq "lj_username") || ($var eq "dw_username") || ($var eq "irc_nick")) {
+        if ($value=~/ /) { print STDERR "Error: Value for '$var' cannot contain a space.\n"; $error = 1; }
+      }
+      if (($var eq "lj_username") && (length($value) > 15)) { print STDERR "Error: LJ username cannot be >15 characters long.\n"; $error = 1; }
+      if (($var eq "dw_username") && ((length($value) == 1) || (length($value) > 25))) { print STDERR "Error: DW username must be between 2 and 25 characters long.\n"; $error = 1; }
+
+      # we're good.
+      if ($value) {
+        push(@sql, "`$var` = ?");
+        push(@sqlargs, $value);
+      }
+      else {
+        push(@sql, "`$var` = NULL");
+      }
+      if ($var eq "preferred_name") { $newprefname = $value; }
+    }
+  }
+
+  if (@sql) {
+    my $dberror = 0;
+    require '/dreamhack/lib/dreamhacks-db.pl';
+    my $sth = $dbh->prepare("UPDATE `users` SET " . join(", ", @sql) . " WHERE `ssh_username` = ?") || ($dberror = 1);
+    $sth->execute(@sqlargs, $username) || ($dberror = 1);
+    if ($dberror) {
+      push(@humanerrs, "An error occurred while trying to update the database. Please contact Sophie.");
+    }
+    elsif (defined($newprefname)) {
+      gecos($username, $newprefname);
+    }
+  }
+  else {
+    push(@humanerrs, "Nothing to update.");
+  }
+
+  if (@humanerrs) {
+    push(@output, @humanerrs);
+    my $points = "* " . join("\n* ", @humanerrs) . "\n";
+    makeError($username, "", "Could not update some Dreamhack details", <<MSG);
+There were some problems updating your Dreamhack details:
+
+$points
+MSG
+  }
+  my $output = join("\n", @output);
+  return ($output, \@newcommands);
+}
+
+sub cmdSetVersion {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  my $ver = $args[0];
+  if ($ver=~/[^0-9]+/) {
+    return makeError($username, "Target version for $username is not a number: '$ver'", "Could not set version number in database", <<MSG);
+The automatic maintainer script could not update your version number in the
+database as the version number '$ver' is not a number. If you weren't
+expecting this, please let Sophie <sophie\@hack.dreamwidth.net> know.
+MSG
+  }
+  require '/dreamhack/lib/dreamhacks-db.pl';
+  my $sth = $dbh->prepare("UPDATE dreamhacks SET version = ? WHERE username = ?");
+  my $result = $sth->execute($ver, $username);
+  if (!$result) {
+    return makeError($username, "Target version for $username is not a number: '$ver'", "Could not set version number in database", <<MSG);
+The automatic maintainer script could not update your version number in the
+database as the version number '$ver' is not a number. If you weren't
+expecting this, please let Sophie <sophie\@hack.dreamwidth.net> know.
+MSG
+  }
+  my $output = join("\n", @output);
+  return ($output, \@newcommands);
+}
+
+# =====
+# END OF COMMANDS
+# =====
+
+sub makeError {
+  my ($username, $shorterror, $subject, $longerror, $nowrite) = @_;
+  $msg = <<MESSAGE;
+[this is an automatic message]
+
+$longerror
+MESSAGE
+  unless ($nowrite) {
+    open(PIPE, "|/usr/bin/write $username");
+    print PIPE $msg;
+    close(PIPE);
+  }
+
+  # also send an email in case they already logged out
+  my $newmsg = new Mail::Send(
+                               subject => $subject,
+                               to      => $username,
+                               bcc     => 'sophie',
+                             );
+  $newmsg->set("From", '"Sophie" <sophie@hack.dreamwidth.net>');
+  my $fh = $newmsg->open();
+  print $fh $msg;
+  $fh->close();
+
+  return ($shorterror);
+}

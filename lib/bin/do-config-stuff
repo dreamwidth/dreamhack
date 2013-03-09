@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+
+#my ($etcdir, $dbname, $dbuser, $dbpass) = @ARGV;
+my ($etcdir, $username, $dbnameprefix, $dbuserprefix, $dbpass) = @ARGV;
+if (!(defined($dbpass))) { die "Not enough arguments!\n"; }
+
+my $local = "$etcdir/config-local.pl";
+my $private = "$etcdir/config-private.pl";
+
+my $dbname = "${dbnameprefix}_$username";
+my $dbuser = "${dbuserprefix}_$username";
+
+my $newfile = "";
+open(LOCAL, "<", $local);
+#my $gotdbinfo      = 0;
+#my $gotschwartzdbs = 0;
+while (<LOCAL>) {
+  my $line = $_;
+  $line=~s/[\r\n]+//g;
+  if ($line=~/^( *\$EMBED_MODULE_DOMAIN) = "embed\.my-other-domain\.net";$/) {
+    $line = "$1 = \"embed.system.$username.hack.dreamwidth.net\";"
+  }
+#  elsif ($gotschwartzdbs) {
+#    if ($line eq "") { $gotschwartzdbs = 0; }
+#    else { $line = "#$line"; }
+#  }
+#  elsif ($line=~/^ *\@THESCHWARTZ_DBS = \($/) { $line = "#$line"; $gotschwartzdbs = 1; }
+  $newfile .= "$line\n";
+}
+close(LOCAL);
+
+open(LOCAL, ">", $local);
+print LOCAL $newfile;
+close(LOCAL);
+
+$newfile = "";
+open(PRIVATE, "<", $private);
+my $gotdbinfo      = 0;
+my $gotschwartzdbs = 0;
+while (<PRIVATE>) {
+  my $line = $_;
+  $line=~s/[\r\n]+//g;
+  if ($gotdbinfo) {
+    my ($spaces, $name) = $line=~/^([ *]+)'([^']+)' => /;
+    my $value;
+    if ($name eq "user") { $value = $dbuser; }
+    if ($name eq "pass") { $value = $dbpass; }
+    if ($name eq "dbname") { $value = $dbname; $gotdbinfo = 0; } # we're done
+    if (defined $value) { $line = "$spaces'$name' => '$value',"; }
+  }
+  elsif ($line=~/^ *\%DBINFO = \($/) { $gotdbinfo = 1; }
+  elsif ($gotschwartzdbs) {
+    my ($spaces, $name) = $line=~/^([ *]+)'?([^ ']+)'? => /;
+    my $value;
+    if ($name eq "dsn") { $value = "dbi:mysql:$dbname;host=localhost"; } 
+    if ($name eq "user") { $value = $dbuser; }
+    if ($name eq "pass") { $value = $dbpass; $gotschwartzdbs = 0; } # we're done
+    if (defined $value) { $line = "$spaces$name => '$value',"; }
+ }
+  elsif ($line=~/^ *\@THESCHWARTZ_DBS = \($/) { $gotschwartzdbs = 1; }
+  $newfile .= "$line\n";
+}
+close(PRIVATE);
+
+open(PRIVATE, ">", $private);
+print PRIVATE $newfile;
+close(PRIVATE);

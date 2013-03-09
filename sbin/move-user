@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+
+require '/dreamhack/lib/dreamhacks-db.pl';
+
+$| = 1;
+
+my ($user) = @ARGV;
+my $sth = $dbh->prepare("SELECT `ssh_username`, `homedir` FROM users WHERE `username` = ?");
+$sth->execute($user);
+
+my $userinfo;
+if (!($userinfo = $sth->fetchrow_hashref())) {
+  die "No info in database for this username - dying for sanity check.\n";
+}
+
+use Data::Dumper;
+print Dumper($userinfo);
+
+my $oldhome = $userinfo->{'homedir'};
+my ($dirname, $basename) = $oldhome=~/^(.*)\/([^\/]+)$/;
+if ($dirname ne "/dreamhack") {
+  die "This user's home directory is not in /dreamhack - maybe already moved?\n";
+}
+
+my $newhome = "/dreamhack/home/$basename";
+print "New target: $newhome\n";
+
+print "Collecting list of files to patch...\n";
+
+my $sth = $dbh->prepare("SELECT `apachedir` FROM userports LEFT OUTER JOIN `users` USING (`username`) WHERE `username` = ?");
+$sth->execute($user);
+
+my @editfiles = ();
+my @apachestart = ();
+while (my ($dir) = $sth->fetchrow_array()) {
+  push(@editfiles, "$oldhome/$dir/conf/httpd.conf");
+  if (-f "$oldhome/$dir/etc/httpd.pid") {
+    print "Stopping Apache install at $oldhome/$dir...\n";
+    system("/usr/sbin/apache2ctl -f $oldhome/$dir/conf/httpd.conf -k stop");
+    print "Adding $newhome/$dir to list of Apache installs to start...\n";
+    push(@apachestart, "$newhome/$dir");
+  }
+}
+
+# add crontab-import to the list
+push(@editfiles, "$oldhome/crontab-import");
+print "Files to patch:\n  " . join("\n  ", @editfiles) . "\n";
+
+print <<STATUS;
+
+Old home: $oldhome
+New home: $newhome
+
+Will carry out move in 10 seconds. Press Ctrl-C to abort...
+STATUS
+sleep 10;
+
+print "Patching files.\n";
+my $replacecmd = "replace \"/dreamhack/\" \"/dreamhack/home/\" -- " . join(" ", @editfiles);
+print "$replacecmd\n";
+system($replacecmd);
+
+print "Moving home directory.\n";
+system("usermod -d $newhome -m " . $userinfo->{'ssh_username'});
+
+print "Updating database.\n";
+my $query = "UPDATE `users` SET `homedir` = ? WHERE `username` = ?";
+my @bind = ($newhome, $user);
+print "$query (bind: \"" . join("\", \"", @bind) . "\")\n";
+$sth = $dbh->prepare($query);
+$sth->execute(@bind);
+
+print "Bringing up Apache installs.\n";
+foreach my $apache (@apachestart) {
+  print "  $apache... ";
+  my $cmd = "su -lc \"/usr/sbin/apache2ctl -f $apache/conf/httpd.conf -k start\" " . $userinfo->{'ssh_username'};
+  print "($cmd)... ";
+  system($cmd);
+  sleep 3;
+  if (-f "$apache/etc/httpd.pid") { print "ok!\n";       }
+                             else { print "failed :(\n"; }
+}

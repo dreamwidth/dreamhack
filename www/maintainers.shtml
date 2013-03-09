@@ -1,0 +1,19 @@
+<!--#set var="title" value="Maintainers" -->
+<!--#include virtual="/_header.shtml" -->
+          <h1>Current Maintainers</h1>
+          <p>Currently, this service is being maintained by Sophie (<span class='ljuser' lj:user='sophie' style='white-space: nowrap;'><a href='http://sophie.dreamwidth.org/profile'><img src='http://hack.dreamwidth.net/img/dwuser.png' alt='[info - personal] ' width='17' height='17' style='vertical-align: bottom; border: 0; padding-right: 1px;' /></a><a href='http://sophie.dreamwidth.org/'><b>sophie</b></a></span>), who is contactable by email
+          at <a href="mailto:sophie@hack.dreamwidth.net">sophie@hack.dreamwidth.net</a>. She can
+          also be found on <a href="http://wiki.dwscoalition.org/notes/IRC">the Dreamwidth IRC
+          channel</a> under the name "Sophira".</p>
+
+          <p>Sophie is a 29-year-old Perl coder, and she used to maintain a similar, privately-run
+          service for Goathacks (ready-to-go LiveJournal installs) after the original service died.
+          She's really pumped about Dreamwidth, and wants to do her part to help Dreamwidth become
+          really good.</p>
+
+          <p>This server is graciously provided by Dreamwidth Studios, LLC for the use of the
+          Dreamhack service. Thank you!</p>
+
+          <p>Credit must also be given to Afuna for running the first Dreamhack service. Thanks,
+	  Afuna!</p>
+<!--#include virtual="/_footer.html" -->

@@ -1,0 +1,357 @@
+/** Tropospherical CSS
+ *
+ * Authors:
+ *     Janine Costanzo <janine@netrophic.com>
+ *     Jesse Proulx <jproulx@jproulx.net>
+ *     Elizabeth Lubowitz <grrliz@gmail.com>
+ * 
+ * Copyright (c) 2009 by Dreamwidth Studios, LLC.
+ *
+ * This program is NOT free software or open-source; you can use it as an
+ * example of how to implement your own site-specific extensions to the
+ * Dreamwidth Studios open-source code, but you cannot use it on your site
+ * or redistribute it, with or without modifications.
+ *
+ */
+
+/**
+ * Dreamwidth Site Scheme
+ *
+ * Standard layout for Dreamwidth
+ *
+ * Mockups designed by grrliz, hence grrliz.css
+ *
+ * @project         Dreamwidth Site Design
+ * @author          Jesse Proulx
+ * @date            2009-01-07
+ * @version         Alpha
+ * @revision        $Revision$
+ * @copyright       Copyright (c) 2009 by Dreamwidth Studios, LLC
+ *
+ * @colordef        #26bbb6 Turquoise (body background)
+ * @colordef        #444444 Dark Gray (copy)
+ */
+@import "reset.css";
+body {
+    background-color: #c1272d;
+    font: 100%/1 Verdana, Helvetica, Arial, sans-serif;
+    color: #444;
+}
+/**
+ * Links and a pseudo link class
+ */
+a:link,
+a:visited,
+.link {
+    color: #c1272d;
+    text-decoration: underline;
+}
+a:hover,
+a:active,
+.link:hover {
+    color: #f4717a;
+}
+/**
+ * Default browser font size is 16px, we want 12px. All width/height measurements
+ * are now calculated using the element's font-size in pixels.
+ *
+ * For example, a 30px wide box with a font-size of 12px = 30/12 = 2.5em
+ */
+#canvas {
+    font-size: 0.75em;
+    line-height: 1.5;
+    margin: 2em 0 2em 0;
+    background: #f7f7f7 url(/img/tropo-red/bg_masthead.png) repeat-x top center;
+    width: 100%;
+}
+#page {
+    width: 80em;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+/**
+ * Masthead is the space for our logo and account links
+ */
+#masthead {
+    height: 8.833333em;
+    width: 100%;
+    position: relative;
+}
+#masthead #logo {
+    display: block;
+    position: absolute;
+    top: 2.25em;
+    left: 0;
+}
+
+#account-links {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding-right: 1em;
+    text-align: right;
+}
+#account-links ul li {
+    float: left;
+    margin: 0 0.5em;
+}
+#account-links #login-table {
+    margin-top: 1em;
+}
+#account-links #login-table td {
+    padding: 3px;
+    text-align: right;
+}
+#account-links #login-table td.input-cell,
+#account-links #login-table td.remember-me-cell {
+    text-align: left;
+}
+#account-links #login-table td.input-cell a {
+    font-size: 0.8em;
+}
+#account-links-text {
+    float: right;
+    padding-right: 1em;
+    padding-top: 2em;
+}
+#account-links-text .ljuser {
+    font-size: 1.5em;
+}
+#account-links-text .ljuser img {
+    vertical-align: middle !important;
+}
+#account-links-userpic {
+    float: right;
+}
+#account-links-userpic img {
+    margin-top: 10px;
+}
+/**
+ * Menu navigation
+ *
+ * The menu follows the content in the markup source, so we absolutely position it underneath the masthead
+ */
+#menu {
+    position: absolute;
+    top: 8.833333em;
+    left: 0;
+    background: #ddd url(/img/tropo-red/bg_menu_gradient.png) repeat-x;
+    height: 2.5em;
+    width: 100%;
+    line-height: 2.5em;
+    clear: both;
+}
+#menu ul li {
+    float: left;
+    position: relative;
+    display: block;
+    height: 100%;
+    width: 0;
+}
+#menu ul > li {
+    width: auto;
+}
+#menu ul li a {
+    background: transparent url(/img/tropo-red/icon_menu_swirl.png) 10px 11px no-repeat;
+    display: block;
+    color: #444;
+    text-decoration: none;
+    text-indent: 1.9em;
+    padding-right: 0.75em;
+}
+/* .hover is a class added by js for the currently hovered/focused menu */
+#menu ul li.hover a {
+    height: 100%;
+    background-color: #f4717a;
+    color: #fff;
+    width: 100%;
+}
+#menu ul li.hover a:hover {
+    background-color: #c1272d;
+    cursor: pointer;
+}
+#menu ul li ul {
+    display: none;
+}
+#menu ul li.hover ul {
+    display: block;
+    position: absolute;
+    top: 2.5em;
+    left: 0;
+    width: 13.5em;
+    background-color: #f4717a;
+}
+#menu ul li ul li {
+    float: none;
+    width: 100%;
+}
+#menu ul li ul li a {
+    text-align: left;
+    display: block;
+    width: 100%;
+}
+#menu #site-search {
+    text-align: right;
+    line-height: 2.1em;
+    padding-right: 0.833333em;
+}
+#menu #site-search input#search {
+    width: 15.5em;
+}
+/**
+ * Footer
+ */
+#footer {
+    width: 100%;
+    height: 4.166667em;
+    background: #ddd url(/img/tropo-red/bg_footer_gradient.png) repeat-x;
+}
+#footer ul {
+    overflow: hidden;
+}
+#footer ul li {
+    float: left;
+    margin-right: 0.8em;
+}
+/**
+ * #content houses the page-specific innards, and creates margins for the absolutely
+ * positioned masthead and footer
+ */
+#content {
+    margin-top: 4.6em;
+    margin-bottom: 2.75em;
+    overflow: hidden;
+}
+#content h1 {
+    font: bold 2em/1.5 Arial, sans-serif;
+    color: #c1272d;
+    margin: 0;
+    padding: 0;
+}
+/**
+ * Content Layouts
+ *
+ * Content layouts are determined based on the class assigned to #content. Potential layouts include:
+ * -- wide sidebars
+ * -- thin sidebars
+ * -- equal width/height columns
+ * -- full page (default)
+ *
+ * Columns/rows inside of #content are named primary, secondary, tertiary, etc and
+ * content is placed inside based on order of importance.
+ */
+
+/* full page (default) */
+#primary,
+#secondary {
+    width: 100%;
+    margin-bottom: 2em;
+}
+/* 2 column wide right sidebar */
+.layout-wide-right-sidebar #primary {
+    width: 53.333333em;
+    margin-right: 1.25em;
+    float: left;
+    padding: 0;
+}
+.layout-wide-right-sidebar #secondary {
+    float: right;
+    width: 25.416667em;
+    margin: 0;
+    padding: 0;
+    padding-top: 0.5em;
+}
+/**
+ * Panels are generic boxes for divs inside of #content
+ */
+#content #primary .panel,
+#content #secondary .panel {
+    width: 100%;
+    border-width: 1px 0 1px 0;
+    border-color: #ccc;
+    border-style: solid;
+    margin: 0 0 0.166667em 0;
+    overflow: hidden;
+}
+#content #primary .panel h2 {
+    color: #c1272d;
+    height: 2em;
+    line-height: 2em;
+    border-bottom: 1px solid #ccc;
+    font: bold 1.5em/2 Arial, sans-serif;
+}
+#content #primary .panel p {
+    clear: both;
+}
+#content #secondary .panel h3 {
+    color: #c1272d;
+    height: 30px;
+    line-height: 30px;
+    border-bottom: 1px solid #ccc;
+    font: bold 1.166667em/2.142857 Arial, sans-serif;
+}
+/**
+ * Panels have different styles for different content layouts
+ */
+.layout-wide-right-sidebar #primary .panel .sidebar {
+    float: left;
+    width: 12.5em;
+}
+.layout-wide-right-sidebar #primary .panel .contents {
+    float: left;
+    padding-top: 6px;
+    padding-left: 14px;
+    border-left: 1px solid #ccc;
+    width: 39.583333em;
+    line-height: 1.8;
+}
+.layout-wide-right-sidebar #secondary .panel .contents {
+    margin: 0.5em 0;
+    line-height: 1.8;
+}
+/**
+ * Panels have unique IDs for CSS hooks
+ */
+#panel-quick-update .sidebar p {
+    height: 3em;
+    line-height: 3em;
+}
+#panel-quick-update .contents label {
+    display: block;
+    width: 100%;
+    color: #c1272d;
+    font-weight: bold;
+}
+#panel-quick-update .contents input,
+#panel-quick-update .contents textarea {
+    width: 95%;
+}
+#panel-quick-update .contents textarea {
+    height: 120px;
+}
+/* panel-first class is added through js */
+#content .panel-first {
+    border-top: 0 !important;
+}
+/**
+ * Form field styles
+ */
+.dw-field-default {
+    color: #333;
+    font-style: italic;
+}
+.standout {
+    text-align: center;
+}
+.standout .standout-inner {
+    background-color: #f4717a;
+    color: #444;
+    border: 1px solid #c1272d;
+    margin-top: 5px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.standout .standout-inner td {
+    padding: 10px;
+}

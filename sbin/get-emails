@@ -1,0 +1,6 @@
+#!/bin/bash
+EMAILS=`dhls email`
+EMAILS="$EMAILS
+mark@dreamwidth.org"
+echo "$EMAILS" | sort | uniq | xargs | sed 's/ /, /g'
+echo "$EMAILS" | sort | uniq | wc -l

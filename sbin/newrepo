@@ -1,0 +1,10 @@
+#!/bin/bash
+
+REPO=$1
+if [ ! -L /dreamhack/opt/dhroot/cvs/$REPO ]; then
+  echo "'$REPO' is not a valid repository; exiting."
+  exit
+fi
+rm /dreamhack/opt/dhroot/cvs/$REPO
+checkout-skel
+mvcvs
