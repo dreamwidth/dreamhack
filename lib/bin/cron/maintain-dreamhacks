@@ -1,0 +1,828 @@
+#!/usr/bin/perl
+
+use File::Temp qw(tempfile);
+use Passwd::Unix qw(passwd gecos home uid gid);
+use Mail::Send;
+
+my $lockfile = "/dreamhack/var/lock/maintain-dreamhacks.pid";
+if (-f $lockfile) {
+  open(PID, "<:encoding(ascii)", $lockfile);
+  my $pid = <PID>;
+  close(PID);
+  chomp($pid);
+  if (kill(0, $pid)) { die "maintain-dreamhacks already running\n"; }
+}
+
+open(PID, ">:encoding(ascii)", $lockfile);
+print PID "$$\n";
+close(PID);
+
+my $maintaindir = "/dreamhack/var/maintain.d";
+my $migrationdir = "/dreamhack/opt/migration";
+my $libbin = "/dreamhack/lib/bin";
+
+opendir(DIR, $maintaindir);
+my @files = readdir(DIR);
+closedir(DIR);
+
+foreach my $file (@files) {
+  my $full = "$maintaindir/$file";
+  next if (!(-f $full));
+  my ($uid, $gid) = (stat($full))[4, 5];
+  my $username = getpwuid($uid);
+  my @outlines = ();
+  open(FILE, "<:encoding(ascii)", $full);
+  while (<FILE>) {
+    my $line = $_;
+    chomp($line);
+    next if (($line=~/^\s*$/) || ($line=~/^#/));
+    my ($command, @args) = split(/ +/, $line);
+    my ($output, @newcommands) = doMaintain($full, $command, $username, @args);
+    if (@newcommands) { push(@outlines, @newcommands); }
+    if ($output) { print STDERR $output . "\n"; }
+  }
+  close(FILE);
+  if (@outlines) {
+    my ($fh, $fn) = tempfile();
+    print $fh join("\n", @outlines) . "\n";
+    close($fh);
+    chown($uid, $gid, $fn);
+    unlink($full);
+    rename($fn, $full);
+  }
+  else {
+    unlink($full);
+  }
+}
+
+unlink($lockfile);
+exit(0);
+
+sub doMaintain {
+  my ($filename, $command, $username, @args) = @_;
+
+  $command = lc($command);
+  my ($output, $newcommands);
+  if ($command eq "reinstall") {
+    ($output, $newcommands) = &cmdReinstall;
+  }
+  elsif ($command eq "edit-dreamhack-info") {
+    ($output, $newcommands) = &cmdEditDreamhackInfo;
+  }
+  elsif ($command eq "set-version") {
+    ($output, $newcommands) = &cmdSetVersion;
+  }
+  elsif ($command eq "send-migration") {
+    ($output, $newcommands) = &cmdSendMigration;
+  }
+  elsif ($command eq "receive-migration") {
+    ($output, $newcommands) = &cmdReceiveMigration;
+  }
+  else {
+    $output = "Unknown command: '$command'";
+  }
+  my @newcommands;
+  if (defined($newcommands)) { @newcommands = @{$newcommands}; }
+
+  return ($output, @newcommands);
+}
+
+sub cmdReinstall {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  if ($args[0] && $args[0] eq "--immediate") {
+    my $reqtime = $args[1];
+    if (time() - $reqtime < 60) {
+      # keep this command for next time
+      push(@newcommands, "$command " . join(" ", @args));
+    }
+    else {
+      # we can do this
+      open(PIPE, "|/usr/bin/write $username");
+      print PIPE <<MESSAGE;
+[this is an automatic message]
+
+Your Dreamhack will now be reinstalled. You will be emailed when the process is
+complete.
+MESSAGE
+      close(PIPE);
+
+      # sleep to give time for the notice to go through
+      sleep 5;
+
+      # grab their (encrypted) password
+      my $userinfo = {
+        password     => passwd($username),
+        ports        => [],
+        ssh_username => $username,
+      };
+
+      # if they had an authorized_keys file, grab that too
+      my $userhome = home($username);
+      my $authkeysfile = "$userhome/.ssh/authorized_keys";
+      my $authkeys;
+      if (-f $authkeysfile) {
+        my $oldumask = umask(0077);   # this is sensitive information
+        my ($fh, $fn) = tempfile();
+        binmode($fh);
+        open(AUTHKEYS, "<:raw", $authkeysfile);
+        while (<AUTHKEYS>) {
+          print $fh $_;
+        }
+        close(AUTHKEYS);
+        close($fh);
+        umask($oldumask);
+        $authkeys = $fn;
+      }
+
+      # grab some more information from the database that we need to keep
+      # before deleting the user entirely
+      require '/dreamhack/lib/dreamhacks-db-readonly.pl';
+      my $sth = $dbh->prepare("SELECT `username`, `email`, `preferred_name`, `lj_username`, `dw_username`, `irc_nick` FROM users WHERE `ssh_username` = ?");
+      $sth->execute($username);
+      my $error = 0;
+      if (my $hash = $sth->fetchrow_hashref()) {
+        foreach my $key (keys %{$hash}) {
+          $userinfo->{$key} = $hash->{$key};
+        }
+
+        # now fetch port information
+        my $sth = $dbh->prepare("SELECT `port` FROM `userports` WHERE `username` = ?");
+        $sth->execute($userinfo->{'username'});
+        while (my ($port) = $sth->fetchrow_array()) {
+          push(@{$userinfo->{'ports'}}, $port);
+        }
+        if (@{$userinfo->{'ports'}} == 0) { $error = 1; }
+      }
+      else {
+        $error = 1;
+      }
+      if ($error == 1) {
+        # a problem :(
+        return makeError($username, "Could not fetch the necessary information from the database for a reinstall.", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+There was a problem retrieving the necessary information from the database
+needed to rebuild your Dreamhack. As a result, your account has not been
+changed. Please contact Sophie <sophie\@hack.dreamwidth.net> and ask for
+a manual delete/reinstall.
+MESSAGE
+      }
+
+      # we know we can rebuild now, so kill with extreme prejudice
+      # first, stop them from logging in again:
+      # 1. public key
+      if (defined($authkeys)) {
+        my $userhome = home($username);
+        my $authkeysfile = "$userhome/.ssh/authorized_keys";
+	rename($authkeysfile, "$authkeysfile.dreamhack-reinstall");
+      }
+      # 2. password
+      passwd($username, "!");
+      # 3. kill kill kill
+      system("skill -KILL -u $username");
+
+      # delete everything
+      foreach my $port (@{$userinfo->{'ports'}}) {
+        my $errcode = system("/dreamhack/sbin/dh-deluser " . $userinfo->{'username'} . " $port");
+        if ($errcode) {
+          return makeError($username, "A problem occurred deleting the user.", "Your Dreamhack could not be rebuilt", <<MESSAGE, 1);
+There was a problem deleting your existing account. You may not be able to log
+back in.
+
+Please contact Sophie <sophie\@hack.dreamwidth.net> for more help, and ask for
+a manual delete/reinstall.
+MESSAGE
+        }
+      }
+
+      # rebuild
+      use Data::Dumper;
+      print Dumper($userinfo);
+      my $ljuser = $userinfo->{'lj_username'};
+      my $dwuser = $userinfo->{'dw_username'};
+      my @args = ($userinfo->{'username'},
+                  (@{$userinfo->{'ports'}})[0],
+                  $userinfo->{'email'},
+                  $userinfo->{'preferred_name'},
+                  (defined($ljuser) ? $ljuser : "-"),
+                  (defined($dwuser) ? $dwuser : "-"),
+                  "1");   # don't automatically email or start up yet
+      print "Executing dh-newuser with args: ('" . join("', '", @args) . "')\n";
+      my $errcode = system('/dreamhack/sbin/dh-newuser', @args);   # we use the multi-argument form of system() here to prevent injection attacks
+      if ($errcode) {
+        return makeError($username, "A problem occurred creating the user.", "Your Dreamhack could not be rebuilt", <<MESSAGE, 1);
+There was a problem creating your new account. You may not be able to log back
+in.
+
+Please contact Sophie <sophie\@hack.dreamwidth.net> for more help, and ask for
+a manual delete/reinstall.
+MESSAGE
+      }
+
+      # reset their password
+      passwd($username, $userinfo->{'password'});
+
+      # put their authorized_keys file back if they had one
+      if (defined($authkeys)) {
+        my $userhome = home($username);   # get the new home, just in case it changed
+        my $authkeysfile = "$userhome/.ssh/authorized_keys";   # ditto
+        rename($authkeys, $authkeysfile);
+        chown(uid($username), gid($username), $authkeysfile);
+      }
+
+      # finally, turn their Apache on
+      $sth = $dbh->prepare("SELECT `domain`, `homedir`, `apachedir` FROM `users` LEFT OUTER JOIN `userports` USING (`username`) WHERE `port` = ?");
+      $sth->execute((@{$userinfo->{'ports'}})[0]);
+      my ($domain, $homedir, $apachedir) = $sth->fetchrow_array();
+
+      system("su -lc \"/usr/sbin/apache2ctl -f $homedir/$apachedir/conf/httpd.conf -k start\" $username");
+      sleep 3;
+      my $notes = (-f "$homedir/$apachedir/etc/httpd.pid" ? "" : "
+      
+However, your Apache instance could not be automatically started. This may be
+due to problems within the DW code as it currently stands. You may want to try
+updating the code by following the instructions at:
+http://wiki.dwscoalition.org/notes/Dev_Maintenance
+
+To start the server again, use the following command:
+start-apache");
+
+      # get their MySQL password for inclusion in the email
+      my $privpass = undef;
+      my $privfile = "$homedir/dw/etc/config-private.pl";
+      if (-f $privfile) {
+        open(PRIVATE, "<:encoding(ascii)", $privfile);
+        while (<PRIVATE>) {
+          my $line = $_;
+          chomp($line);
+          if ($line=~/^ +'pass' => '([^']+)',/) { $privpass = $1; last; }
+        }
+        close(PRIVATE);
+      }
+      my $privpara = <<PARA;
+Unfortunately, this script couldn't work out what your new database password
+is, possibly due to a change in the style of the configuration files. You
+should be able to find it yourself in the dw/etc/config-private.pl file, though.
+PARA
+      if (defined($privpass)) {
+        $privpara = <<PARA;
+For reference, your new database password is "$privpass". Note that anything
+which asks for this password from the original email will need to use the one
+from this email instead.
+PARA
+      }
+      # we're done! Send an email to let them know.
+      my $msg = new Mail::Send(
+                                subject => "Your Dreamhack has been rebuilt!",
+                                to      => $username,
+                                bcc     => 'sophie',
+                              );
+      $msg->set("From", '"Sophie" <sophie@hack.dreamwidth.net>');
+      my $fh = $msg->open();
+      print $fh <<MESSAGE;
+[this is an automatic message]
+
+Your Dreamhack has been successfully rebuilt and is available at:
+
+http://www.$domain/$notes
+
+Your SSH password is the same as it was before the rebuild, so you should be
+able to log in with the same credentials. The database password has changed,
+however, so you should take note of the new value in your etc/config-private.pl
+file in case you need it.
+
+If you had one, your ~/.ssh/authorized_keys file has also been retained.
+
+$privpara
+Please review the README file in your home directory in case there have been
+any changes that you may need to be aware of.
+
+Thank you!
+
+- Sophie.
+MESSAGE
+      $fh->close();
+    }
+  }
+  else {
+    push(@newcommands, "reinstall --immediate " . time());
+    open(PIPE, "|/usr/bin/write $username");
+    print PIPE <<MESSAGE;
+[this is an automatic message]
+
+A request to reinstall your Dreamhack has been received.
+
+Within the next 60 seconds, you can cancel this request with the following
+command:
+
+rm $filename
+
+If the reinstall continues, you will be logged out and your account will be
+completely rebuilt from scratch - that is, your account and home directory will
+be deleted and reinstalled as if for a new user. Your password (and your
+~/.ssh/authorized_keys file, if any) will be copied over, and you will receive
+an email once the reinstall is complete, which will take about 2-3 minutes.
+Your Apache instance will also be automatically started.
+
+If you have any data you need to backup, please CANCEL this request and do so
+now; the reinstall process will wipe your entire home directory.
+MESSAGE
+    close(PIPE);
+    push(@output, "Queued reinstall for $username.");
+  }
+  my $output = join("\n", @output);
+  return ($output, \@newcommands);
+}
+
+sub cmdEditDreamhackInfo {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  my @humanerrs = ();
+  my @sql = ();
+  my @sqlargs = ();
+  # go through the arguments
+  my %validargs = (
+    lj_username => 1,
+    dw_username => 1,
+    irc_nick => 1,
+    preferred_name => 1,
+  );
+
+  my $newprefname = undef;
+  my $args = join(" ", @args);
+  while ($args=~/(?:^| )([^=]+)="([^"]*)"/g) {
+    my ($var, $value) = ($1, $2);
+    if (!defined($validargs{$var})) {
+      push(@humanerrs, "Cannot set '$var' to '$value' as it is not an allowed name.");
+    }
+    else {
+      # check the values before adding them
+      if (length($value) > 255) { print STDERR "Error: Value for '$var' is over 255 characters.\n"; $error = 1; }
+      if (($var eq "lj_username") || ($var eq "dw_username") || ($var eq "irc_nick")) {
+        if ($value=~/ /) { print STDERR "Error: Value for '$var' cannot contain a space.\n"; $error = 1; }
+      }
+      if (($var eq "lj_username") && (length($value) > 15)) { print STDERR "Error: LJ username cannot be >15 characters long.\n"; $error = 1; }
+      if (($var eq "dw_username") && ((length($value) == 1) || (length($value) > 25))) { print STDERR "Error: DW username must be between 2 and 25 characters long.\n"; $error = 1; }
+
+      # we're good.
+      if ($value) {
+        push(@sql, "`$var` = ?");
+        push(@sqlargs, $value);
+      }
+      else {
+        push(@sql, "`$var` = NULL");
+      }
+      if ($var eq "preferred_name") { $newprefname = $value; }
+    }
+  }
+
+  if (@sql) {
+    my $dberror = 0;
+    require '/dreamhack/lib/dreamhacks-db.pl';
+    my $sth = $dbh->prepare("UPDATE `users` SET " . join(", ", @sql) . " WHERE `ssh_username` = ?") || ($dberror = 1);
+    $sth->execute(@sqlargs, $username) || ($dberror = 1);
+    if ($dberror) {
+      push(@humanerrs, "An error occurred while trying to update the database. Please contact Sophie.");
+    }
+    elsif (defined($newprefname)) {
+      gecos($username, $newprefname);
+    }
+  }
+  else {
+    push(@humanerrs, "Nothing to update.");
+  }
+
+  if (@humanerrs) {
+    push(@output, @humanerrs);
+    my $points = "* " . join("\n* ", @humanerrs) . "\n";
+    makeError($username, "", "Could not update some Dreamhack details", <<MSG);
+There were some problems updating your Dreamhack details:
+
+$points
+MSG
+  }
+  my $output = join("\n", @output);
+  return ($output, \@newcommands);
+}
+
+sub cmdSetVersion {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  my $ver = $args[0];
+  if ($ver=~/[^0-9]+/) {
+    return makeError($username, "Target version for $username is not a number: '$ver'", "Could not set version number in database", <<MSG);
+The automatic maintainer script could not update your version number in the
+database as the version number '$ver' is not a number. If you weren't
+expecting this, please let Sophie <sophie\@hack.dreamwidth.net> know.
+MSG
+  }
+  require '/dreamhack/lib/dreamhacks-db.pl';
+  my $sth = $dbh->prepare("UPDATE dreamhacks SET version = ? WHERE username = ?");
+  my $result = $sth->execute($ver, $username);
+  if (!$result) {
+    return makeError($username, "Target version for $username is not a number: '$ver'", "Could not set version number in database", <<MSG);
+The automatic maintainer script could not update your version number in the
+database as the version number '$ver' is not a number. If you weren't
+expecting this, please let Sophie <sophie\@hack.dreamwidth.net> know.
+MSG
+  }
+  my $output = join("\n", @output);
+  return ($output, \@newcommands);
+}
+
+sub cmdSendMigration {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  if ($args[0] && $args[0] eq "--immediate") {
+    my $reqtime = $args[1];
+    if (time() - $reqtime < 60) {
+      # keep this command for next time
+      push(@newcommands, "$command " . join(" ", @args));
+    }
+    else {
+      require '/dreamhack/lib/dreamhacks-db.pl';   # we need write access later
+
+      my $sth = $dbh->prepare("SELECT `username`, `migrated` FROM `users` WHERE `ssh_username` = ?");
+      $sth->execute($username);
+      if ($sth->rows == 0) {
+        return makeError($username, "SSH username '$username' is not listed in database???", "Unable to start migration process", <<BODY);
+For some reason, your Dreamhack account is not listed in the Dreamhacks
+database. As a result, migration cannot start. Please contact Sophie at
+<sophie\@hack.dreamwidth.net> and let her know of this error.
+BODY
+      }
+      my ($dbname, $migrated) = $sth->fetchrow_array();
+      if ($migrated eq "yes") {
+        return makeError($username, "Account for '$dbname' has already been migrated", "Your account has already been migrated!", <<BODY);
+You requested to start the migration process, but according to the database,
+your account has already been migrated.
+
+If the migration had an error, or if you wish to restore the backup of your
+account from the old server, please email Sophie at
+<sophie\@hack.dreamwidth.net> and let her know. Thank you.
+BODY
+      }
+
+      # we can do this
+      open(PIPE, "|/usr/bin/write $username");
+      print PIPE <<MESSAGE;
+[this is an automatic message]
+
+Your Dreamhack will now be migrated to the new server. You will be emailed when
+the process is complete.
+MESSAGE
+      close(PIPE);
+
+      # sleep to give time for the notice to go through
+      sleep 5;
+
+      # grab their (encrypted) password
+      my $password = passwd($username);
+
+      # kill with extreme prejudice
+      passwd($username, "!");   # stop them from logging back in again for now
+      system("skill -KILL -u $username");
+
+      my $error = 0;
+
+      # stop their Apaches
+      my $sth = $dbh->prepare("SELECT `username` FROM `users` WHERE `ssh_username` = ?");
+      $sth->execute($username);
+      my ($dbname) = $sth->fetchrow_array();
+
+      my @ports = ();
+      my $sth = $dbh->prepare("SELECT `port` FROM `userports` WHERE `username` = ?");
+      $sth->execute($dbname);
+      while (my ($port) = $sth->fetchrow_array()) {
+        push(@ports, $port);
+      }
+
+      my ($homedir, $apachedir);
+      foreach my $port (@ports) {
+        $sth = $dbh->prepare("SELECT `homedir`, `apachedir` FROM `users` LEFT OUTER JOIN `userports` USING (`username`) WHERE `port` = ?");
+        $sth->execute($port);
+        ($homedir, $apachedir) = $sth->fetchrow_array();
+        system("/usr/sbin/apache2ctl -f $homedir/$apachedir/conf/httpd.conf -k stop");
+      }
+
+      # migrate!
+      passwd($username, $password);   # so that migration-send can see the password; it'll do another "!" reset
+      my $error = system("perl /dreamhack/lib/bin/migration-send $username");
+      if ($error) {
+        passwd($username, $password);   # make sure they can log back in
+        return makeError($username, "An error occurred during migration-send - see cron email", "Your Dreamhack could not be migrated", <<MESSAGE, 1);
+An error occurred while sending your account to the new server. An error report
+has been sent to Sophie. You should be able to continue working on the old
+server for now.
+
+If you don't hear from Sophie in about 12 hours of this message, please reply
+to this message and let her know, as she may have missed the error report.
+MESSAGE
+      }
+      else {
+        # success!
+        # let's do the post-send things
+        # 1. mark account as migrated
+        print "Marking account as migrated...\n";
+        my $sth = $dbh->prepare("UPDATE users SET migrated = 'yes' WHERE username = ?");
+        $sth->execute($dbname);
+
+        # 2. add lines to .bashrc
+        print "Adding lines to .bashrc...\n";
+        open(my $fh, ">>:encoding(ascii)", "$homedir/.bashrc");
+        print $fh <<BODY;
+echo
+echo "===== PLEASE NOTE: ====="
+echo
+echo "This server is the OLD Dreamhack server! Your Dreamhack is now located on the"
+echo "new server at \\"newhack.dreamwidth.net\\", and you will need to reconfigure your"
+echo "SSH client to point to this new address."
+echo
+echo "Your account on this old server is now merely a record of your account as it"
+echo "was before it was transferred. You may still work with the shell and files if"
+echo "you wish, but any changes you make here will not be transferred to the new"
+echo "server."
+echo
+echo "This old server will go offline on 2011-11-01, at which point the SSH server"
+echo "name \\"hack.dreamwidth.net\\" will point to the new server."
+echo
+echo " * To disconnect from the server, press RETURN."
+echo " * If you wish to work in the shell, press Ctrl-C."
+echo
+read
+exit
+BODY
+        close($fh);
+
+        # 3. Put old-server text file in homedir
+        print "Putting old-server text file in homedir...\n";
+        open(my $fh, ">:encoding(ascii)", "$homedir/THIS_IS_THE_OLD_SERVER.txt");
+        print $fh <<BODY;
+If you can see this file, then you are logged into the OLD Dreamhack server.
+Your account has been migrated to the new server at "newhack.dreamwidth.net",
+and you will need to set your SSH client (and SFTP client, if you use one) to
+use the new server instead.
+
+Note that any changes you make on the old server will NOT be transferred to the
+new one automatically, and you will lose any changes on the old server when it
+goes down on 2011-xx-xx. To prevent this, simply log into the new server at
+"newhack.dreamwidth.net" and make your changes there.
+BODY
+        close($fh);
+
+        # 4. Set up perlbal
+        print "Setting up perlbal...\n";
+        foreach my $port (@ports) {
+          my ($fh, $fn) = tempfile();
+          my $oldconf = "/home/perlbal/sites/$port-$dbname.conf";
+          my ($uid, $gid) = (stat($oldconf))[4, 5];
+          open(my $readfh, "<:encoding(ascii)", $oldconf);
+          while (<$readfh>) {
+            my $line = $_;
+            chomp($line);
+            if ($line=~/^  POOL ([^_ ]+)_pool ADD 127\.0\.0\.1:$port$/) {
+              $line = "  POOL $1_pool ADD 67.207.129.41:80";
+            }
+            print $fh "$line\n";
+          }
+          close($readfh);
+          close($fh);
+          chown($uid, $gid, $fn);
+          unlink($oldconf);
+          rename($fn, $oldconf);
+        }
+        print "Restarting perlbal...\n";
+        system("/etc/init.d/perlbal restart");
+
+        # 5. Remove /opt/migration/ files
+        print "Removing $migrationdir files for this user...\n";
+        foreach my $ext (qw(cfg tar.gz crontab sql)) {
+#          unlink("$migrationdir/$username.$ext");
+        }
+
+        passwd($username, $password);   # just in case they want to
+        sendEmail($username, "Migration status: 50% done", <<MESSAGE);
+[this is an automatic message]
+
+Your account has been sent to the new server, which will now set the account up
+on its end. You will receive another email when this process is complete.
+
+You can still log into the old server if you want to do so, but note that you
+will not be able to use Apache on the old server any more as the Web access has
+been set up to point to the new server, and you will lose any changes made on
+the old server when it is taken down. To assist with this, a file named
+'THIS_IS_THE_OLD_SERVER.txt' has been placed in your home directory, so you can
+use this to see if you are on the old server.
+
+Please wait for an email from the new server. If you do not receive one within
+the next 15 minutes, please reply to this email and let Sophie know. Thank you!
+
+ -- The migration scripts.
+MESSAGE
+      }
+    }
+  }
+  else {
+    require '/dreamhack/lib/dreamhacks-db-readonly.pl';
+
+    my $sth = $dbh->prepare("SELECT `username`, `migrated` FROM `users` WHERE `ssh_username` = ?");
+    $sth->execute($username);
+    if ($sth->rows == 0) {
+      return makeError($username, "SSH username '$username' is not listed in database???", "Unable to start migration process", <<BODY);
+For some reason, your Dreamhack account is not listed in the Dreamhacks
+database. As a result, migration cannot start. Please contact Sophie at
+<sophie\@hack.dreamwidth.net> and let her know of this error.
+BODY
+    }
+    my ($dbname, $migrated) = $sth->fetchrow_array();
+    if ($migrated eq "yes") {
+      return makeError($username, "Account for '$dbname' has already been migrated", "Your account has already been migrated!", <<BODY);
+You requested to start the migration process, but according to the database,
+your account has already been migrated.
+
+If the migration had an error, or if you wish to restore the backup of your
+account from the old server, please email Sophie at
+<sophie\@hack.dreamwidth.net> and let her know. Thank you.
+BODY
+    }
+    push(@newcommands, "send-migration --immediate " . time());
+    open(PIPE, "|/usr/bin/write $username");
+    print PIPE <<MESSAGE;
+[this is an automatic message]
+
+A request to migrate your Dreamhack to the new server has been received. Thank
+you!
+
+If you are not ready to migrate yet, you can cancel this request with the
+following command within the next 60 seconds:
+
+rm $filename
+
+If the migration continues, you will be logged out, your Apache will be
+stopped, and your account will be sent to the new server at
+"newhack.dreamwidth.net". You will receive an email when the account has been
+transferred, and another one from the new server when it has been set up.
+
+All your data will be transferred, and in case of any problems, your account on
+the old server will also remain active, although you will be unable to use
+Apache with it. Should any problems occur during migration, an error report
+will be sent to Sophie and you should receive an email from her. (If you don't,
+feel free to email her yourself at <sophie\@hack.dreamwidth.net>.)
+MESSAGE
+    close(PIPE);
+    push(@output, "Queued migration for $username.");
+  }
+  my $output = join("\n", @output);
+  return ($output, \@newcommands);
+}
+
+sub cmdReceiveMigration {
+  my ($filename, $command, $username, @args) = @_;
+  my @output = ();
+  my @newcommands = ();
+  if ($username ne "root") {
+    # only root can request this
+    return makeError($username, "User $username tried to run receive-migration, but was stopped from doing so", "Cannot execute 'receive-migration'", <<MSG);
+Sorry, but the 'receive-migration' command is available only to root.
+MSG
+  }
+  else {
+    # check that we have the config file for this
+    my $targuser = $args[0];
+    if ($targuser =~ /[^0-9a-z\-_]/) {
+      return makeError($username, "Username '$targuser' has invalid characters", "Migration failed: Username '$targuser' has invalid characters", <<BODY, 1);
+The username '$targuser', who we were supposed to migrate, has invalid characters. Cannot continue.
+
+IF NECESSARY, PLEASE EMAIL $targuser TO LET THEM KNOW!
+BODY
+    }
+    my $filename = "$migrationdir/$targuser.cfg";
+    if (!-f $filename) {
+      return makeError($username, "Couldn't find .cfg file for user!", "Migration for '$targuser' failed and unable to email", <<BODY, 1);
+The $filename file could not be found; cannot migrate user.
+
+PLEASE EMAIL $targuser DIRECTLY OR LET THEM KNOW!
+BODY
+    }
+    # now that we know the username both has valid characters and exists, let's look up the email so we can email them later.
+    my %config;
+    open(my $fh, "<:encoding(utf-8)", $filename);
+    while (<$fh>) {
+      my $line = $_;
+      chomp($line);
+      my ($key, $value) = $line=~/^([^=]+)=(.*)$/;
+      $config{$key} = $value;
+    }
+    close($fh);
+
+    # run the migration script
+    my $error = system("perl $libbin/migration-receive $targuser");
+    if ($error) {
+      # oh dear. Send an email.
+      sendEmail($config{'email'}, "Dreamhack migration failed!", <<BODY);
+[this is an automatic message]
+
+Hello $config{'preferred_name'},
+
+Unfortunately, the migration of your Dreamhack appears to have failed. An error
+report has been sent to Sophie, who will try to work things out and contact you
+with more information.
+
+Sorry for the inconvenience! She did test the scripts before making them
+available, but obviously something has gone wrong that she didn't expect. If
+you don't hear from her soon - in the next 12 hours or so - please email her at
+<sophie\@hack.dreamwidth.net> (or reply to this email) and let her know about
+this problem, as she may have missed the email.
+
+Unfortunately, due to the way the migration works, you will probably not be
+able to do any more testing with Apache until the problem is fixed, even on the
+old server. Please hang in there! We'll get this sorted.
+
+ -- The migration scripts.
+BODY
+      # also send an error
+      return makeError($username, "General migration failure for '$targuser' - see cron email", "General migration failure for '$targuser' - see cron email", "The migration-receive script returned an error code of $error. Please see the cron email for more information.", 1);
+    }
+    else {
+      # success!
+      # we can remove the migration files now
+      foreach my $ext (qw(cfg sql tar.gz crontab)) {
+        unlink("$migrationdir/$targuser.$ext");
+      }
+      sendEmail($config{'email'}, "Your Dreamhack has been migrated successfully!", <<BODY);
+[this is an automatic message]
+
+Hello $config{'preferred_name'},
+
+Your migration has completed successfully and you should now be able to log in
+via SSH on the new server:
+
+Hostname: newhack.dreamwidth.net
+Username: $config{'ssh_username'}
+Password: <the same password you had before>
+
+You should also use the new server name in your SFTP program, if you use one.
+The old server at 'hack.dreamwidth.net' can no longer be logged into for now,
+but stay tuned to your email - I plan to point the old name to the new server
+soon. In the meantime, you should use the server name 'newhack.dreamwidth.net'
+instead.
+
+Note that the URL you use for your Dreamhack will remain the same:
+
+http://www.$config{'domain'}/
+
+If you need anything, or have any problems, let me know by replying to this
+message. It's possible that there are some programs missing on the new server
+because I forgot to install them. If this is the case, just let me know and
+I'll get it on for you as soon as possible.
+
+Thank you, and take care!
+
+ - Sophie.
+BODY
+    return ("Migration completed successfully!")
+    }
+  }
+}
+
+# =====
+# END OF COMMANDS
+# =====
+
+sub makeError {
+  my ($username, $shorterror, $subject, $longerror, $nowrite) = @_;
+  # $shorterror is only used in maintain-dreamhacks output in cron
+  # $longerror is presented to the user as a write message and email
+  # $subject is the email subject
+  $msg = <<MESSAGE;
+[this is an automatic message]
+
+$longerror
+MESSAGE
+  unless ($nowrite) {
+    open(PIPE, "|/usr/bin/write $username");
+    print PIPE $msg;
+    close(PIPE);
+  }
+
+  # also send an email in case they already logged out
+  sendEmail($username, $subject, $msg);
+
+  return ($shorterror);
+}
+
+sub sendEmail {
+  my ($emailaddr, $subject, $body) = @_;
+  my $newmsg = new Mail::Send(
+                               subject => $subject,
+                               to      => $emailaddr,
+                               bcc     => 'sophie',
+                             );
+  $newmsg->set("From", '"Sophie" <sophie@hack.dreamwidth.net>');
+  my $fh = $newmsg->open();
+  print $fh $body;
+  $fh->close();
+}

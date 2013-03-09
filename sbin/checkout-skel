@@ -1,0 +1,8 @@
+#!/bin/bash
+export LJHOME=/dreamhack/opt/dhroot
+wget -O $LJHOME/cvs/multicvs.conf http://hg.dwscoalition.org/dw-free/raw-file/tip/cvs/multicvs.conf
+wget -O $LJHOME/bin/cvsreport.pl http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/cvsreport.pl
+wget -O $LJHOME/bin/vcv http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/vcv
+chmod ugo+x $LJHOME/bin/cvsreport.pl $LJHOME/bin/vcv
+$LJHOME/bin/cvsreport.pl --checkout
+hg -R $LJHOME/cvs/dw-free up -C null

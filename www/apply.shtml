@@ -1,0 +1,27 @@
+<!--#set var="title" value="Apply" -->
+<!--#include virtual="/_header.shtml" -->
+          <h1>Apply for a Dreamhack</h1>
+          <p>Use the form below to apply for a Dreamhack. Note that it may take up to a day for
+          your application to be processed. The username, preferred name and DW/LJ/IRC name
+          fields will appear publicly on the <a href="/dreamhacks.shtml">Dreamhacks</a> page.</p>
+
+          <form method="post" action="/do/apply">
+          <table id="application-form">
+          <tr><th>Your desired username:</th><td>http://www.<input type="text" name="username" size="15" maxlength="13">.hack.dreamwidth.net/<br><p class="small">(your SSH username will be the same, but with the characters <b>dh-</b> appended to the beginning.)</p></td></tr>
+          <tr><th>Your DW username (if you have one):</th><td><input type="text" name="dwname" size="25" class="dwuser stretch"></td></tr>
+          <tr><th>Your LJ username (if you have one):</th><td><input type="text" name="ljname" size="15" class="ljuser stretch"></td></tr>
+          <tr><th>Your IRC name (if you use it):</th><td><input type="text" name="ircname" size="25" class="stretch"></td></tr>
+          <tr><th>Your preferred name:</th><td><input type="text" name="prefname" size="30" class="stretch"></td></tr>
+          <tr><th>Your email address:</th><td><input type="text" name="email" size="30" class="stretch"></td></tr>
+          <tr><th>Your main purposes for a Dreamhack:</th><td>
+            <input type="checkbox" name="purpose-coding" value="1" id="purpose-coding"> <label for="purpose-coding">Coding</label><br>
+            <input type="checkbox" name="purpose-designing" value="1" id="purpose-designing"> <label for="purpose-designing">Designing</label><br>
+            <input type="checkbox" name="purpose-testing" value="1" id="purpose-testing"> <label for="purpose-testing">Testing</label><br>
+            <input type="checkbox" name="purpose-other" value="1" id="purpose-other"> <label for="purpose-other">Other</label><br>
+            <input type="checkbox" name="purpose-unsure" value="1" id="purpose-unsure"> <label for="purpose-unsure">Unsure</label>
+          </td></tr>
+          <tr><th>Any other notes:</th><td><textarea name="notes" rows="3" cols="50"></textarea></td></tr>
+          <tr><td></td><td><input type="submit" value="Submit"></td></tr>
+          </table>
+          </form>
+<!--#include virtual="/_footer.html" -->

@@ -1,0 +1,48 @@
+# Page that shows the sub-level navigation links given the top-level navigation header
+#
+# Authors:
+#     Janine Costanzo <janine@netrophic.com>
+#
+# Copyright (c) 2009 by Dreamwidth Studios, LLC.
+#
+# This program is NOT free software or open-source; you can use it as an
+# example of how to implement your own site-specific extensions to the
+# Dreamwidth Studios open-source code, but you cannot use it on your site
+# or redistribute it, with or without modifications.
+#
+
+<?page
+body<=
+<?_code
+{
+    use strict;
+    use vars qw(%GET %POST $title $headextra @errors @warnings);
+
+    $title = $ML{'.title'};
+
+    my $cat = $GET{cat};
+    return $ML{'.error.nocat'} unless $cat;
+
+    my $remote = LJ::get_remote();
+    my $ret;
+
+    my $nav_links = LJ::run_hook( "nav_links", category => $cat );
+    return $ML{'.error.invalidcat'} unless @$nav_links;
+    $title = $ML{"tropo.nav.$cat"};
+
+    my @links_html;
+    foreach my $link ( @$nav_links ) {
+        next unless ( $remote && $link->{loggedin} ) || ( !$remote && $link->{loggedout} );
+        push @links_html, "<a href='$link->{url}'>$ML{$link->{text}}</a>";
+    }
+    $ret .= join("<br />", @links_html);
+
+    return $ret;
+}
+_code?>
+<=body
+title=><?_code return $title; _code?>
+head<=
+<?_code return $headextra; _code?>
+<=head
+page?>

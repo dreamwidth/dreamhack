@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+require '/dreamhack/lib/dreamhacks-db.pl';
+
+my ($username, $port, $force) = @ARGV;
+die "Not a number" if $port=~/[^0-9]/;
+
+my $sth = $dbh->prepare('DELETE FROM `userports` WHERE `port` = ? AND `username` = ?') || die "Could not prepare DELETE statement: $!";
+my $result = $sth->execute($port, $username) || die "Could not execute DELETE statement: $!";
+if ($result == 0) {
+  if (!$force) {
+    die "Apparently nothing was deleted - maybe this user doesn't control this port? Aborting for sanity check.\n";
+  }
+  else {
+    print "Apparently nothing was deleted - maybe this user doesn't control this port? Continuing because of force.\n";
+  }
+}
+
+$sth = $dbh->prepare('SELECT COUNT(*) FROM `userports` WHERE `username` = ?') || die "Could not prepare check: $!";
+$sth->execute($username) || die "Could not execute check: $!";
+
+my $count = ($sth->fetchrow_array())[0];
+if ($count == 0) {
+  print "Last port belonging to '$username' deleted, deleting user...\n";
+  $sth = $dbh->prepare('DELETE FROM `users` WHERE `username` = ?') || die "Could not prepare second DELETE statement: $!";
+  $sth->execute($username) || die "Could not execute second DELETE statement: $!";
+}
+
+exit(0);

@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+
+use CGI qw(:standard);
+require '/dreamhack/lib/dreamhacks-db-readonly.pl';
+
+print header("text/html; charset=UTF-8");
+
+my $sth = $dbh->prepare('SELECT `homedir`, `apachedir`, `domain`, `lj_username`, `dw_username`, `irc_nick`, `preferred_name` FROM `userports` LEFT OUTER JOIN `users` USING (`username`) ORDER BY `ssh_username` ASC');
+$sth->execute();
+
+if ($sth->rows == 0) {
+  print "There are currently no Dreamhacks installed.\n";
+  exit(0);
+}
+
+print <<HEADER;
+<table id="dreamhacks">
+<tr><th>Name</th><th>DW / LJ / IRC Name</th><th>URL</th></tr>
+HEADER
+while (my $row = $sth->fetchrow_hashref()) {
+  my $name = $row->{'preferred_name'};
+  if (!(defined($name))) { $name = $row->{'username'}; }
+  my $dwuser = $row->{'dw_username'};
+  if (defined($dwuser)) { $dwuser = make_dwusertag($dwuser, 0); }
+  my $ljuser = $row->{'lj_username'};
+  if (defined($ljuser)) { $ljuser = make_ljusertag($ljuser, 0); }
+  my $ircnick = $row->{'irc_nick'};
+
+  my $apachefile = $row->{'homedir'} . "/" . $row->{'apachedir'} . "/etc/httpd.pid";
+  my $running = 0;
+  if (-f $apachefile) {
+    open(PID, "<", $apachefile);
+    my $pid = <PID>;
+    close(PID);
+    chomp($pid);
+    if (-f "/proc/$pid/stat") { $running = 1; }
+  }
+  my $url = "http://www." . $row->{'domain'} . "/";
+  if ($running) { $url = "<a href=\"$url\">$url</a>"; }
+           else { $url = "<span class=\"notrunning\">$url</span>"; }
+
+  my $printrow = "<tr class=\"user\"><td class=\"name\">$name</td><td>";
+  my @usernames = ();
+  push(@usernames, $dwuser) if $dwuser;
+  push(@usernames, $ljuser) if $ljuser;
+  push(@usernames, "IRC: <b>$ircnick</b>") if $ircnick;
+  $printrow .= join(" / ", @usernames) . "</td><td>$url</td></tr>";
+  print "$printrow\n";
+  my  $planfile = $row->{'homedir'} . "/.plan";
+  if (-f $planfile) {
+    open(PLAN, "<", $planfile);
+    my $plan = join("", <PLAN>);
+    close(PLAN);
+    $plan=~s/&/&amp;/g;
+    $plan=~s/</&lt;/g;
+    $plan=~s/>/&gt;/g;
+    $plan=~s/\n/<br>/gs;
+    $plan=~s/(http:\/\/[a-zA-Z0-9\.\/:\?=&\-~_,!%;#\+]+[a-zA-Z0-9\.\/=&\-~_%#\+])/<a href="$1" rel="nofollow">$1<\/a>/g;
+    $plan=~s/\b(bug #?)(\d+)\b/<a href="http:\/\/bugs.dwscoalition.org\/show_bug.cgi?id=$2">$1$2<\/a>/gi;
+    print "<tr><td colspan=\"3\" class=\"planfile\"><p class=\"planfileheader\"><b>${name}'s .plan:</b></p><p class=\"planfile\">$plan</p></td></tr>\n";
+  }
+}
+print "</table>\n";
+
+sub make_ljusertag {
+  my ($username, $comm) = @_;
+  if ($username=~/\./) { return undef; }
+  my ($url);
+  my $hyphenusername = $username;
+  $hyphenusername=~s/_/-/g;
+  $url = ($username=~/(?:^_|_$)/ ?
+          "http://users.livejournal.com/$username/" :
+          "http://$hyphenusername.livejournal.com/");
+  my $ljusertag = "<span class=\"ljuser\"><a href=\"${url}profile\"><img src=\"/img/ljuser.gif\" width=\"17\" height=\"17\" alt=\"[info]\"></a><a href=\"${url}\">$username</a></span>";
+  return $ljusertag;
+}
+
+sub make_dwusertag {
+  my ($username, $comm) = @_;
+  if ($username=~/\./) { return undef; }
+  my ($url);
+  my $hyphenusername = $username;
+  $hyphenusername=~s/_/-/g;
+  $url = "http://$hyphenusername.dreamwidth.org/";
+  my $dwusertag = "<span class=\"dwuser\"><a href=\"${url}profile\"><img src=\"/img/dwuser.png\" width=\"16\" height=\"16\" alt=\"[info]\"></a><a href=\"${url}\">$username</a></span>";
+  return $dwusertag;
+}

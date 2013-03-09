@@ -1,0 +1,7 @@
+The scripts `dreamhacks-db*.pl` handle connecting to the database. Copy over
+the sample file, and fill in the credentials of the database users (one with
+read-write access, the other with read-only access). You'll need both files
+for the various scripts.
+
+    cp dreamhacks-db.pl.txt dreamhacks-db.pl
+    cp dreamhacks-db.pl.txt dreamhacks-db-readonly.pl

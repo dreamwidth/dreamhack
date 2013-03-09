@@ -1,0 +1,8 @@
+Files to link in here:
+
+LJ-UserSearch -> /dreamhack/var/skel/dw/cvs/LJ-UserSearch
+ddlockd -> /dreamhack/var/skel/dw/cvs/ddlockd
+dw-free -> /dreamhack/var/skel/dw/cvs/dw-free
+gearman -> /dreamhack/var/skel/dw/cvs/gearman
+hubbub -> /dreamhack/var/skel/dw/cvs/hubbub
+memcached -> /dreamhack/var/skel/dw/cvs/memcached

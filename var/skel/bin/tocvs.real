@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# to use this script, just use 'tocvs' - it's aliased in your .bashrc.
+
+DIR=$PWD
+REPO=${1-'dw-free'}
+
+if  [[ "$REPO" == "f" ]]; then REPO="dw-free";    fi
+if  [[ "$REPO" == "n" ]]; then REPO="dw-nonfree"; fi
+
+if [[ "$DIR" =~ ^$LJHOME ]]; then
+  if [[ "$DIR" =~ ^$LJHOME/cvs/([^\/]+) ]]; then
+    FROMREPO=${BASH_REMATCH[1]}
+    if [[ "$1" == "" ]]; then
+      DIR=${DIR/#$LJHOME\/cvs\/$FROMREPO/$LJHOME}
+    else
+      DIR=${DIR/#$LJHOME\/cvs\/$FROMREPO/$LJHOME\/cvs\/$REPO}
+    fi
+  else
+    DIR=${DIR/#$LJHOME/$LJHOME\/cvs\/$REPO}
+  fi
+fi
+cd $DIR

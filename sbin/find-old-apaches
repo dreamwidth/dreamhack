@@ -1,0 +1,13 @@
+#!/bin/bash
+DAYS=${1-"7"}
+echo "Apaches where the owners haven't logged in within the last $DAYS days:"
+LOGGEDIN=`ps -A -o user:16,command | awk '/^dh-[^ ]+ +-bash$/ { print $1 }'`
+
+lastlog -b $DAYS | awk '/^dh-/ { sub(/^dh-/, ""); print $1 }' | xargs /dreamhack/lib/bin/get-apaches | xargs -i cat {}/etc/httpd.pid 2>/dev/null | xargs ps p
+#lastlog -b $DAYS | awk '/^dh-/ { print $1 }'
+ELIGIBLE=$(grep -vxF -f <(ps -A -o user:16,command | awk '/^dh-[^ ]+ +-bash$/ { print $1 }') <(lastlog -b $DAYS | awk '/^dh-/ { print $1 }') | sed 's/^dh-//')
+echo $ELIGIBLE
+
+xargs /dreamhack/lib/bin/get-apaches <<IN | xargs -i cat {}/etc/httpd.pid 2>/dev/null | xargs ps p
+$ELIGIBLE
+IN

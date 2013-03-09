@@ -1,0 +1,7 @@
+<!--#set var="title" value="Apply" -->
+<!--#include virtual="/_header.shtml" -->
+          <h1>Apply</h1>
+          <h2>Problem with Application</h2>
+          <p>Your application could not be sent because you have not filled in all the required fields.
+          Please go back and do so.</p>
+<!--#include virtual="/_footer.html" -->

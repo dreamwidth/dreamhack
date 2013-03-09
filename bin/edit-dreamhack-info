@@ -1,0 +1,118 @@
+#!/usr/bin/perl
+
+use File::Temp qw(tempfile);
+use Digest::MD5 qw(md5);
+
+require '/dreamhack/lib/dreamhacks-db-readonly.pl';
+
+my $username = getpwuid($<);
+my $sth = $dbh->prepare("SELECT `preferred_name`, `lj_username`, `dw_username`, `irc_nick` FROM users WHERE ssh_username = ?");
+$sth->execute($username);
+if ($sth->rows == 0) {
+  die "Couldn't find you in the Dreamhacks database. :( Please let Sophie know about this.\n";
+}
+elsif ($sth->rows > 1) {
+  die "For some reason, you have more than one row listed in the database for your SSH username. This shouldn't happen - please let Sophie know about this.\n";
+}
+
+my $details = $sth->fetchrow_hashref();
+
+my $newfile = <<FILE;
+# The lines below indicate your current names/nicknames as understood by the
+# system. You can change these if you wish; please take care to preserve the
+# format of the lines, however.
+#
+# To delete a piece of information, set the value to nothing - that is, leave
+# the name but delete the actual value. Do not delete the whole line; this
+# will result in that piece of information staying as it was previously.
+#
+# When you are finished, save this file and exit; if any changes have been
+# made, a request will be submitted to automatically update the details on the
+# system. This could take up to a minute from the time of submission.
+
+   dw_username: $details->{'dw_username'}
+      irc_nick: $details->{'irc_nick'}
+   lj_username: $details->{'lj_username'}
+preferred_name: $details->{'preferred_name'}
+FILE
+
+my ($fh, $filename) = tempfile();
+print $fh $newfile;
+close($fh);
+
+# get the old MD5 to compare to later
+my $oldmd5 = md5($newfile);
+
+my $editor = $ENV{'EDITOR'};
+if (!$editor) { $editor = "/etc/alternatives/editor"; }
+system($editor, $filename);
+
+# see if they changed it
+my $file = "";
+open(FILE, "<", $filename);
+while (<FILE>) {
+  $file .= $_;
+}
+close(FILE);
+if (md5($file) eq $oldmd5) {
+  print "No changes made.\n";
+  unlink($filename);
+}
+else {
+  # process the request
+  my @lines = split(/\n/, $file);
+  my $changed = 0;
+  my %changed = ();
+  foreach my $line (@lines) {
+    my $error = 0;
+    $line=~s/(?:^ +| +$)//g;
+    next if ($line eq "") || ($line=~/^#/);
+    my ($var, $value) = $line=~/^([^:]+):(.*)$/;
+    $value=~s/^ +//;
+    if (!exists($details->{$var}))  { print STDERR "Error: '$var' is not a valid name.\n";              $error = 1; }
+    if (length($value) > 255)       { print STDERR "Error: Value for '$var' is over 255 characters.\n"; $error = 1; }
+    if (($var eq "lj_username") || ($var eq "dw_username") || ($var eq "irc_nick")) {
+      if ($value=~/ /) { print STDERR "Error: Value for '$var' cannot contain a space.\n"; $error = 1; }
+    }
+    if (($var eq "lj_username") && (length($value) > 15)) { print STDERR "Error: LJ username cannot be >15 characters long.\n"; $error = 1; }
+    if (($var eq "dw_username") && ((length($value) == 1) || (length($value) > 25))) { print STDERR "Error: DW username must be between 2 and 25 characters long.\n"; $error = 1; }
+
+    if ($error) {
+      print STDERR "...cannot update value for '$var'; skipping.\n";
+    }
+    else {
+      # we passed. See if this is the same or not.
+      if ($details->{$var} ne $value) {
+        # not the same, do an update
+        print STDERR "Updating '$var' to '$value'...\n";
+        $details->{$var} = $value;
+        $changed = 1;
+	$changed{$var} = 1;
+      }
+      # don't print anything if nothing's changed
+    }
+  }
+
+  if ($changed) {
+    print "Submitting change request...\n";
+    my @params = ();
+    foreach my $key (sort keys %changed) {
+      push(@params, "$key=\"" . $details->{$key} . "\"");
+    }
+    my $command = "edit-dreamhack-info " . join(" ", @params);
+    my $newfilename = "/dreamhack/var/maintain.d/edit-dreamhack-info-$username";
+    open(FILE, ">:encoding(ascii)", $newfilename) || die "Could not open file for writing: $!";
+    print FILE "$command\n";
+    close(FILE);
+
+    print "* Your request has been submitted and will be processed within 1-2 minutes.\n";
+    print "* If an error occurs, you will receive an email.\n";
+  }
+  else {
+    print "Nothing else has changed; not submitting a change request.\n";
+  }
+
+  unlink($filename);
+}
+
+exit 0;
