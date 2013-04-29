@@ -1,0 +1,45 @@
+<VirtualHost *:8000>
+	ServerName hack.dreamwidth.org
+	ServerAlias *.hack.dreamwidth.org
+
+	DocumentRoot /dreamhack/var/www-redir
+	<Directory /dreamhack/var/www-redir>
+		Options +ExecCGI
+		AddHandler cgi-script .cgi
+		AllowOverride None
+		Order allow,deny
+		Allow from all
+	</Directory>
+
+	ErrorDocument 404 /redir.cgi
+	DirectoryIndex redir.cgi
+
+	RewriteEngine on
+	RewriteCond %{REQUEST_METHOD} ^POST$
+	RewriteCond %{REQUEST_URI} !^/redir.cgi
+	RewriteRule ^.*$ /redir.cgi
+</VirtualHost>
+
+<VirtualHost *:8000>
+	# we can reedirect the main site now that the old server is dead and the DNS has changed.
+	ServerName redir.newhack.dreamwidth.net
+	ServerAlias newhack.dreamwidth.net
+	ServerAlias *.newhack.dreamwidth.net
+
+	DocumentRoot /dreamhack/var/www-redir
+	<Directory /dreamhack/var/www-redir>
+		Options +ExecCGI
+		AddHandler cgi-script .cgi
+		AllowOverride None
+		Order allow,deny
+		Allow from all
+	</Directory>
+
+	ErrorDocument 404 /redir.cgi
+	DirectoryIndex redir.cgi
+
+	RewriteEngine on
+	RewriteCond %{REQUEST_METHOD} ^POST$
+	RewriteCond %{REQUEST_URI} !^/redir.cgi
+	RewriteRule ^.*$ /redir.cgi
+</VirtualHost>

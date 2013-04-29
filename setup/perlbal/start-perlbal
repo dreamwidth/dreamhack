@@ -1,0 +1,41 @@
+#!/usr/bin/perl
+
+use POSIX 'setsid';
+
+if (-e "/home/perlbal/perlbal.pid") {
+  # check if it's running
+  open(PID, "<", "/home/perlbal/perlbal.pid");
+  my $pid = <PID>;
+  chomp($pid);
+  close(PID);
+  if (kill(0, $pid)) {
+    die "perlbal is already running";
+  }
+  else {
+    print "perlbal seems to have died leaving its pid - starting again\n";
+  }
+}
+
+# go fork ourselves
+$SIG{CHLD} = 'IGNORE';
+my $kidpid = fork;
+if (!(defined($kidpid))) { die "cannot fork: $!"; }
+if (!$kidpid) {   # meaning, if we ARE the child
+  # write our PID
+  open(PID, ">", "/home/perlbal/perlbal.pid");
+  print PID $$;
+  close(PID);
+
+  # detach ourselves
+  chdir "/";
+  open(STDIN, "/dev/null");
+  open(STDOUT, ">/home/perlbal/stdout.txt");
+  open(STDERR, ">/home/perlbal/stderr.txt");
+  setsid;
+  my $oldfh = select STDOUT;
+  $| = 1;
+  select STDERR;
+  $| = 1;
+  select $oldfh;
+  exec("/usr/local/bin/perlbal", "--config=/home/perlbal/perlbal.conf");   # no --daemon, we've already detached
+}
