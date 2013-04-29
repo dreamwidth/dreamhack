@@ -9,7 +9,8 @@ LISTENIP="127.0.0.1"				# the IP to listen on
 
 BASEDIR="/dreamhack"				# base directory for Dreamhack stuff
 LIBDIR="$BASEDIR/lib/bin"			# support scripts
-SKELDIR="$BASEDIR/var/skel"			# the directory to copy for the initial home directory
+#SKELDIR="$BASEDIR/var/skel"			# the directory to copy for the initial home directory
+SKELDIR="$BASEDIR/var/skel.new"			# the directory to copy for the initial home directory
 
 BASEHOMEDIR="$BASEDIR/home"			# the directory that home directories should live under - this can be anything you want
 NONFREE=1					# copy over the dw-nonfree repository?
@@ -21,8 +22,9 @@ USERSHELL="/bin/bash"				# the shell the created user should get
 USERHARDQUOTA=512000				# the hard quota that should be given, in blocks.
 						# (needs kernel and filesystem quota support; use 0 to disable)
 
-MYSQLUSER="root"				# a MySQL user that has permission to create users and databases
-MYSQLPASSWORD=''			        # CHANGETHIS the password for the above MySQL user
+source /dreamhack/local/settings.root
+MYSQLUSER="$dh_db_root_username"		# a MySQL user that has permission to create users and databases
+MYSQLPASSWORD="$dh_db_root_password"
 DBPREFIX="dreamhack"				# the prefix for the database name
 						# database user prefixes are controlled by USERPREFIX, above.
 
@@ -54,13 +56,14 @@ if [ "$1" == "--delete" ]; then
   shift
 fi
 
-USERNAME=$1
-PORT=$2
-EMAIL=$3
-PREFNAME=$4
-LJUSER=$5
-DWUSER=$6
-AUTOMATIC=$7
+USERNAME="$1"
+PORT="$2"
+EMAIL="$3"
+PREFNAME="$4"
+GITNAME="$5"
+LJUSER="$6"
+DWUSER="$7"
+AUTOMATIC="$8"
 
 UHOME=$BASEHOMEDIR/$PORT-$USERNAME
 UNIXUSER=$USERPREFIX-$USERNAME
@@ -113,7 +116,10 @@ if [ "$DELETE" == "1" ]; then
     exit 1
   fi
 
-  /usr/sbin/apache2ctl -f $APACHEDIR/conf/httpd.conf -k stop
+  # this step shouldn't cause any problems being run as root, but since it handles user data I'm running it as the user just in case
+  su -lc "
+    /usr/sbin/apache2ctl -f $APACHEDIR/conf/httpd.conf -k stop
+  " $UNIXUSER
   sleep 3
 
   echo "Removing from database..."
@@ -173,6 +179,19 @@ if [ "$PREFNAME" == "" ]; then
   ERROR=1
 else
   echo "  Name: '$PREFNAME'"
+fi
+
+if [ "$GITNAME" == "" ]; then
+  echo "Please supply a GitHub username!"
+  ERROR=1
+else
+  echo "GitHub: '$GITNAME'"
+  # check to see if this GitHub account does everything we need to, as well as getting the canonically-cased username
+  CGITNAME=$($LIBDIR/check-github-account "$GITNAME")
+  if [ "$?" -ne 0 ]; then
+    echo "GitHub account does not exist or does not have the repositories needed to continue - see above for details."
+    ERROR=1
+  fi
 fi
 
 # this is optional
@@ -306,59 +325,33 @@ chown -R $UNIXUSER:$DHGROUP $UHOME
 echo setting rwx--x--x on home directory...
 chmod 711 $UHOME
 
-# grab the latest multicvs.conf, cvsreport.bl, vcv, and update the code (to save us
-# having to update twice). We start out with the dw-free repository not having a
-# working copy, to save space and time; a working copy is automatically produced
-# when cvsreport.pl updates.
-
-# FIXME: Put back the normal multicvs.conf line when Data-ObjectDriver stuff is fixed
-# Also fix update-skel
+# clone the dw-free repo from the user's GitHub account
+echo cloning dw-free...
 su -lc "
-  PS1=blah source $UHOME/.bashrc
-  cp -a $BASEDIR/opt/dhroot/cvs/multicvs.conf $LJHOME/cvs/multicvs.conf
-  wget -O $LJHOME/cvs/multicvs.conf http://hg.dwscoalition.org/dw-free/raw-file/tip/cvs/multicvs.conf
+  git clone https://$CGITNAME@github.com/$CGITNAME/dw-free.git $LJHOME
+  cd $LJHOME
 
-# FIXME: We'll need to comment out the Data-ObjectDriver line, remove when bug 2463 is fixed
-#  replace \"SVN(Data-ObjectDriver)\" \"#SVN(Data-ObjectDriver)\" -- $LJHOME/cvs/multicvs.conf
-
-  mkdir $LJHOME/bin
-  wget -O $LJHOME/bin/cvsreport.pl http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/cvsreport.pl
-  wget -O $LJHOME/bin/vcv http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/vcv
-  chmod ugo+rx $LJHOME/bin/cvsreport.pl $LJHOME/bin/vcv
-  $LJHOME/bin/cvsreport.pl -u
-" $UNIXUSER
- 
-# we need to explicitly force dw-free to the tip, as we started off without a
-# working copy
-su -lc "
-  cd $LJHOME/cvs/dw-free
-  hg update -C tip
+  # and let's make it aware of the dreamwidth repository so we can grab updates later
+  git remote add dreamwidth https://github.com/dreamwidth/dw-free
+  git fetch dreamwidth
+  # we also want to sync up with the main branches
+  git branch --set-upstream develop dreamwidth/develop 
+  git branch --set-upstream master dreamwidth/master
 " $UNIXUSER
 
 if [ "$NONFREE" == "1" ]; then
-  # clone the dw-nonfree repo
+  # do the same for dw-nonfree
+  echo cloning dw-nonfree...
   su -lc "
-    cd $LJHOME/cvs
-    hg clone http://hg.dwscoalition.org/dw-nonfree dw-nonfree
-    cp dw-nonfree/cvs/multicvs-local.conf $LJHOME/cvs/multicvs-local.conf
+    cd $LJHOME/ext
+    git clone https://$CGITNAME@github.com/$CGITNAME/dw-nonfree.git
+    cd dw-nonfree
+    git remote add dreamwidth https://github.com/dreamwidth/dw-nonfree
+    git fetch dreamwidth
+    git branch --set-upstream develop dreamwidth/develop
+    git branch --set-upstream master dreamwidth/master
   " $UNIXUSER
 fi
-
-# now copy all that over to the right places
-su -lc "
-  PS1=blah source $UHOME/.bashrc
-  $LJHOME/bin/cvsreport.pl -s -c
-" $UNIXUSER
-
-# copy the wgetted files from the CVS to the bin/ with -a, so that the timestamping works
-su -lc "
-  cp -a $LJHOME/cvs/dw-free/cvs/multicvs.conf $LJHOME/cvs/multicvs.conf
-  cp -a $LJHOME/cvs/dw-free/bin/cvsreport.pl $LJHOME/bin/cvsreport.pl
-  cp -a $LJHOME/cvs/dw-free/bin/vcv $LJHOME/bin/vcv
-" $UNIXUSER
-
-# FIXME: We'll need to comment out the Data-ObjectDriver line again, remove when bug 2463 is fixed
-#replace "SVN(Data-ObjectDriver)" "#SVN(Data-ObjectDriver)" -- $LJHOME/cvs/multicvs.conf
 
 # put a crontab file in the user's home directory, but don't load
 # it; we'll give them instructions on that later on.
@@ -407,28 +400,51 @@ LJHOME=$LJHOME
 CRON
 chown $UNIXUSER:$DHGROUP $UHOME/crontab-import
 
+# make the initial .gitconfig file
+cat > $UHOME/.gitconfig <<CONFIG
+[user]
+	name = $PREFNAME
+	email = $EMAIL
+CONFIG
+chown $UNIXUSER:$DHGROUP $UHOME/.gitconfig
+
 # Set up MySQL
 mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "CREATE DATABASE \`${DBPREFIX}_$USERNAME\`"
 mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "GRANT ALL PRIVILEGES ON \`${DBPREFIX}_$USERNAME\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD'"
 
 # create initial LJ config and tweak it for the installation
-cp -a $LJHOME/doc/ljconfig.pl.txt $LJHOME/etc/ljconfig.pl
-cp -a $LJHOME/doc/config-local.pl.txt $LJHOME/etc/config-local.pl
-cp -a $LJHOME/doc/config-private.pl.txt $LJHOME/etc/config-private.pl
-chmod go-rwx $LJHOME/etc/config-private.pl
+# since this deals with an untrusted LJHOME, I'm su'ing this even though it shouldn't cause any problems
+su -lc "
+  cd $LJHOME
+  mkdir -p ext/local/etc
+  echo 'highest' > ext/local/.dir_scope
+
+  cp -a $LJHOME/doc/config-local.pl.txt $LJHOME/ext/local/etc/config-local.pl
+  cp -a $LJHOME/doc/config-private.pl.txt $LJHOME/ext/local/etc/config-private.pl
+  chmod go-rwx $LJHOME/ext/local/etc/config-private.pl
+" $UNIXUSER
 
 # edit the config to put the right domain in
-replace "\$DOMAIN = \"ljsite.com\"" "\$DOMAIN = \"$USERNAME.$DOMAIN\"" -- $LJHOME/etc/config-private.pl
+# su'ing this for the same reason as above
+su -lc "
+  replace '\$DOMAIN = \"ljsite.com\"' '\$DOMAIN = \"$USERNAME.$DOMAIN\"' -- $LJHOME/ext/local/etc/config-private.pl
+" $UNIXUSER
 
 # do the config replacements for MySQL, and other stuff
 # we'll call out to another script for this as it's too hard to do properly in bash
-$LIBDIR/do-config-stuff $LJHOME/etc $USERNAME $DBPREFIX $USERPREFIX $PASSWORD
+# this is potentially abuseable, so su'ing this too
+su -lc "
+  
+  $LIBDIR/do-config-stuff $LJHOME/ext/local/etc $USERNAME $DBPREFIX $USERPREFIX $PASSWORD
+" $UNIXUSER
 
 # populate the database and run texttool, and start the server
+# the first update-db command needs to be run twice dur to a dbnotes check that fails
 NOTES=""
 su -lc "
   PS1=blah source $UHOME/.bashrc
 
+ \$LJHOME/bin/upgrading/update-db.pl -r --innodb
  \$LJHOME/bin/upgrading/update-db.pl -r --innodb
  \$LJHOME/bin/upgrading/update-db.pl -r --cluster=all --innodb
  \$LJHOME/bin/upgrading/update-db.pl -p
@@ -495,17 +511,18 @@ echo "Adding user to database..."
 # make a temp file to store our details
 TEMPFILE=`mktemp` || exit 1
 cat > $TEMPFILE <<TEMP
-$USERNAME
-$LJUSER
-$DWUSER
-$UNIXUSER
-$PREFNAME
-$UHOME
-$EMAIL
-$DHVERSION
-$PORT
-apache
-$USERNAME.$DOMAIN
+username=$USERNAME
+ljusername=$LJUSER
+dwusername=$DWUSER
+sshusername=$UNIXUSER
+prefname=$PREFNAME
+homedir=$UHOME
+email=$EMAIL
+version=$DHVERSION
+port=$PORT
+apachedir=apache
+domain=$USERNAME.$DOMAIN
+githubname=$CGITNAME
 TEMP
 # call out to a Perl script for this
 $LIBDIR/add-to-db $TEMPFILE

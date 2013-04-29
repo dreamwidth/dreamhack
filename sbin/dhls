@@ -1,0 +1,11 @@
+#!/bin/bash
+source /dreamhack/local/settings.root
+FIELDS='`username`, `port`, `email`, `preferred_name`, `github_username`, `lj_username`, `dw_username`'
+ARGS=''
+if [ "$1" != "" ]; then
+  FIELDS=$1
+  ARGS='--batch --skip-column-names'
+fi
+QUERYONE="SELECT $FIELDS"
+QUERYTWO=' FROM `userports` LEFT OUTER JOIN `users` USING (`username`) LEFT OUTER JOIN `user_emails` USING (`username`) ORDER BY `port` ASC;'
+mysql -u"$dh_db_readwrite_username" -p"$dh_db_readwrite_password" dreamhacks $ARGS -e "$QUERYONE$QUERYTWO"

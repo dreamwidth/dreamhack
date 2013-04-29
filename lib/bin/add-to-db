@@ -4,30 +4,43 @@ require '/dreamhack/lib/dreamhacks-db.pl';
 
 my $file = $ARGV[0];
 if (! -f $file) { die "$file is not a file"; }
-my @names = qw(username ljusername dwusername sshusername prefname homedir email version port apachedir domain);
+my %names = (
+  username    => 1,
+  ljusername  => 1,
+  dwusername  => 1,
+  sshusername => 1,
+  prefname    => 1,
+  homedir     => 1,
+  email       => 1,
+  version     => 1,
+  port        => 1,
+  apachedir   => 1,
+  domain      => 1,
+  githubname  => 1,
+);
 my %config = ();
 open(CONFIG, "<:encoding(ascii)", $file);
-my $i = 0;
 while (<CONFIG>) {
   my $line = $_;
   chomp($line);
   next if ($line eq "");
-  die "No more config options" if (!(defined($names[$i])));
-  if ($line eq "-") { $line = undef; }
-  $config{$names[$i]} = $line;
-  $i++;
+  my ($name, @value) = split(/=/, $line);
+  die "Config option '$name' not recognised" if (!(defined($names{$name})));
+  my $value = join("=", @value);
+  if ($value eq "-") { $value = undef; }
+  $config{$name} = $value;
 }
 close(CONFIG);
 
-my $sth = $dbh->prepare("INSERT INTO `users` (`username`, `lj_username`, `dw_username`, `ssh_username`, `preferred_name`, `homedir`, `email`, `version`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)") || die "Could not prepare first insert: $!";
+my $sth = $dbh->prepare("INSERT INTO `users` (`username`, `github_username`, `lj_username`, `dw_username`, `ssh_username`, `preferred_name`, `homedir`, `version`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)") || die "Could not prepare first insert: $!";
 $sth->execute(
   $config{'username'},
+  $config{'githubname'},
   $config{'ljusername'},
   $config{'dwusername'},
   $config{'sshusername'},
   $config{'prefname'},
   $config{'homedir'},
-  $config{'email'},
   $config{'version'},
 ) || die "Could not execute first insert: $!";
 
@@ -38,5 +51,11 @@ $sth->execute(
   $config{'apachedir'},
   $config{'domain'},
 ) || die "Could not execute second insert: $!";
+
+$sth = $dbh->prepare("INSERT INTO `user_emails` (`username`, `email`) VALUES (?, ?)") || die "Could not prepare third insert: $!";
+$sth->execute(
+  $config{'username'},
+  $config{'email'},
+) || die "Could not execute third insert: $!";
 
 exit(0);
