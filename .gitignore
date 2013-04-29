@@ -1,0 +1,3 @@
+home/[0-9]*
+var/maintain.d/
+www/dev/docs
