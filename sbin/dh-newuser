@@ -9,8 +9,7 @@ LISTENIP="127.0.0.1"				# the IP to listen on
 
 BASEDIR="/dreamhack"				# base directory for Dreamhack stuff
 LIBDIR="$BASEDIR/lib/bin"			# support scripts
-#SKELDIR="$BASEDIR/var/skel"			# the directory to copy for the initial home directory
-SKELDIR="$BASEDIR/var/skel.new"			# the directory to copy for the initial home directory
+SKELDIR="$BASEDIR/var/skel"			# the directory to copy for the initial home directory
 
 BASEHOMEDIR="$BASEDIR/home"			# the directory that home directories should live under - this can be anything you want
 NONFREE=1					# copy over the dw-nonfree repository?
