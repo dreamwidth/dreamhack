@@ -1,0 +1,88 @@
+#!/usr/bin/perl
+
+# WARNING: This file had changes to it on the old server which are not reflected in this file.
+# It will probably need to be looked at to ensure that whichever changes were made are represented here.
+# Unfortunately, while I did back the changed file up and intended to restore them on the new server,
+# I lost the backup. :/ Thus, I'm not sure what the changes were.
+# (In any case, the script will need redone to work with the new user_emails table)
+
+use Passwd::Unix qw(passwd gecos home uid gid shell);
+use Quota;
+
+require '/dreamhack/lib/dreamhacks-db.pl';
+require '/dreamhack/local/helpers/settings.pl';
+my $dh_settings = dh_settings('root');
+
+my $outgoingdir = "/dreamhack/opt/migration";
+
+my ($username) = @ARGV;
+if (!defined $username) { die "$0: no username specified"; }
+if (!defined uid($username)) { die "$0: user '$username' does not exist"; }
+
+if ($username =~ /[^0-9a-z\-_]/) { die "$0: username '$username' contains unexpected characters"; }
+
+my $password = passwd($username);
+passwd($username, "!");
+
+print "Creating .cfg file...\n";
+my $cfgfile = "$outgoingdir/$username.cfg";
+
+my $sth = $dbh->prepare('SELECT `users`.`username`, `lj_username`, `dw_username`, `ssh_username`, `irc_nick`, `preferred_name`, `email`, `version`, `port`, `domain` FROM `users` LEFT OUTER JOIN `userports` USING (`username`) WHERE `ssh_username` = ?') || die "Could not prepare select: $!";
+$sth->execute($username) || die "Could not execute select: $!";
+my $user = $sth->fetchrow_hashref;
+open(my $cfg, ">:encoding(utf-8)", $cfgfile) || die "$0: couldn't open '$cfgfile' for writing: $!";
+foreach my $key (keys %{$user}) {
+  print $cfg "$key=$user->{$key}\n";
+}
+print $cfg "password=$password\n";
+my (undef, undef, $hard) = Quota::query(Quota::getqcarg("/"), uid($username), 0);
+print $cfg "quota=$hard\n";
+
+# reconnect as root to get the MySQL password
+$sth->finish;
+$dbh->disconnect;
+
+$dbh = DBI->connect("DBI:mysql:mysql:localhost", $dh_settings->{'dh_db_root_username'}, $dh_settings->{'dh_db_root_password'});
+if (!defined $dbh) {
+  die "Could not connect to server to read SQL user information: " . DBI->errstr;
+}
+
+$dbh->{'mysql_enable_utf8'} = 1;
+$dbh->do("SET NAMES utf8");
+
+my $sname = $user->{'username'};
+my $sth = $dbh->prepare('SELECT `password` FROM `mysql`.`user` WHERE `host` = "localhost" AND `user` = ?') || die "Could not prepare second select: $!";
+$sth->execute("dh_$sname") || die "Could not execute second select: $!";
+my ($pass) = $sth->fetchrow_array;
+print $cfg "sqlpassword=$pass\n";
+print $cfg "shell=" . shell($username) . "\n";
+#print $cfg "endcfg=1\n";
+close($cfg);
+
+# that's the config file done; now we need to dump the SQL and the crontab, and tarball the home directory
+my $port = $user->{'port'};
+my $uhome = "/dreamhack/home/$port-$sname";
+my $name = $user->{'ssh_username'};
+open(my $bash, "|-", "/bin/bash");
+print $bash <<OUT;
+echo Dumping SQL...
+mysqldump -uroot -ppoopoohead dreamhack_$sname > $outgoingdir/$name.sql
+echo Dumping crontab...
+CRONTAB=`crontab -u $name -l`
+if [ "\$?" == "0" ]; then
+  echo "\$CRONTAB" > $outgoingdir/$name.crontab
+fi
+echo Creating tarball...
+tar -C "$uhome" -zcf "$outgoingdir/$name.tar.gz" .
+echo Sending files to newhack...
+scp $outgoingdir/$name.{tar.gz,sql,crontab,cfg} newhack-transfer:/dreamhack/opt/migration/.
+echo Signalling to newhack to process the files...
+ssh newhack-transfer '
+umask 0077
+FILE=`mktemp`
+echo "receive-migration '$name'" > \$FILE
+mv \$FILE /dreamhack/var/maintain.d/.
+'
+OUT
+close($bash);
+passwd($username, $password);
