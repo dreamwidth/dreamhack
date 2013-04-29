@@ -8,6 +8,7 @@ use LWP::Simple qw(get);
 use Text::CSV::Slurp;
 
 my $fromdate = param("fromdate");
+my $todate = param("todate");
 if (!defined($fromdate) || ($fromdate eq "")) {
   print <<HTML;
 <html>
@@ -18,14 +19,15 @@ if (!defined($fromdate) || ($fromdate eq "")) {
 <script type="text/javascript" src="jquery.datepick.min.js"></script>
 <script type="text/javascript">
 \$(function() {
-  \$('#popupDatePicker').datepick({dateFormat: 'yyyy-mm-dd', firstDay: 1});
+  \$('#popupDatePickerFrom').datepick({dateFormat: 'yyyy-mm-dd', firstDay: 1});
+  \$('#popupDatePickerTo').datepick({dateFormat: 'yyyy-mm-dd', firstDay: 1});
 });
 </script>
 </head>
 <body>
 <form method="get" action="index.cgi">
-<p>What date should the code tour start from? (YYYY-MM-DD format, please; click text box for date picker):<br>
-<input type="text" name="fromdate" id="popupDatePicker"><br>
+<p>What dates should the code tour cover? (YYYY-MM-DD format, please; click text boxes for date pickers; end date is optional and can be left blank if you don't want an end date):<br>
+<input type="text" name="fromdate" id="popupDatePickerFrom"> to <input type="text" name="todate" id="popupDatePickerTo"><br>
 <input type="checkbox" name="blankdesc" value="1" id="blankdesc"> <label for="blankdesc">Leave 'description' blank instead of using "FILL IN".<label></p>
 <p><input type="submit" value="Generate"></p>
 </form>
@@ -35,19 +37,35 @@ if (!defined($fromdate) || ($fromdate eq "")) {
 HTML
 }
 else {
+
   my @now = gmtime();   # this should be okay - it's the same timezone used by Bugzilla.
   my $now = sprintf("%04d-%02d-%02d", $now[5] + 1900, $now[4] + 1, $now[3]);
+
+  my $togiven = 0;
+
   if ($fromdate !~ /^\d\d\d\d-\d\d-\d\d$/) {
-    print error("That doesn't look like a date to me. (You entered '$fromdate'). Please try again.");
+    print error("That doesn't look like a valid 'from' date to me. (You entered '$fromdate'). Please try again.");
     exit;
   }
-  if ($fromdate gt $now) {
-    print error("It looks like you're trying to search in the future. (You said $fromdate.) This tool can only search bugs opened in the past. Try again!");
+  if (!defined($todate) || $todate eq "") {
+    $tobugdate = "Now";
+  }
+  elsif ($todate !~ /^\d\d\d\d-\d\d-\d\d$/) {
+    print error("That doesn't look like a valid 'to' date to me. (You entered '$todate'). Please try again.");
     exit;
   }
-  my $url = "http://bugs.dwscoalition.org/buglist.cgi?bug_status=RESOLVED&chfield=bug_status&chfieldfrom=$fromdate&chfieldto=Now&columnlist=bug_severity%2Cpriority%2Cop_sys%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccomponent%2Cassigned_to_realname%2Cbug_file_loc&query_format=advanced&resolution=FIXED&ctype=csv&order=changeddate";
+  else {
+    $tobugdate = $todate;
+    $togiven = 1;
+  }
+
+  if (($togiven == 1) && ($fromdate gt $todate)) {
+    print error("It looks like your 'to' date is before your 'from' date. (You said to search from $fromdate to $todate.) Try again!");
+    exit;
+  }
+  my $url = "http://bugs.dwscoalition.org/buglist.cgi?bug_status=RESOLVED&chfield=bug_status&chfieldfrom=$fromdate&chfieldto=$tobugdate&chfieldvalue=RESOLVED&columnlist=bug_severity%2Cpriority%2Cop_sys%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccomponent%2Cassigned_to_realname%2Cbug_file_loc&query_format=advanced&resolution=FIXED&ctype=csv&order=changeddate";
   my $durl = encode_entities($url);
-  my $manualurl = encode_entities("http://bugs.dwscoalition.org/buglist.cgi?chfieldto=Now&query_format=advanced&chfield=bug_status&chfieldfrom=$fromdate&bug_status=RESOLVED&resolution=FIXED&order=changeddate");
+  my $manualurl = encode_entities("http://bugs.dwscoalition.org/buglist.cgi?chfieldfrom=$fromdate&chfieldto=$tobugdate&chfieldvalue=RESOLVED&query_format=advanced&chfield=bug_status&bug_status=RESOLVED&resolution=FIXED&order=changeddate");
 
   print <<HTML;
 <html>
@@ -55,6 +73,7 @@ else {
 <title>Code Tour Template Generator</title>
 </head>
 <body>
+<h2>Getting bugs from $fromdate to $tobugdate</h2>
 <p>Getting <a href="$durl">the CSV file from Bugzilla</a>...</p>
 HTML
   my $csv = get($url);
