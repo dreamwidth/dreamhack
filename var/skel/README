@@ -7,12 +7,15 @@ we have a healthy, nurturing community of people who are more than willing to
 give their time in order to help out newcomers. (See the 'Community' section
 below for more details.)
 
+(Notice for those who have read this README before: It has been updated
+recently for git and you may want to read it again.)
+
 Getting Started
 ===============
 
 rahaeli has written a superb wiki page detailing how to get started with your
 Dreamhack at the following address:
-  http://wiki.dwscoalition.org/notes/Dreamhack_Getting_Started
+  http://wiki.dwscoalition.org/wiki/index.php/Dreamhack_Getting_Started
 
 It covers most of the common things you'll need to do to get started. If you
 have an issue, check this page first.
@@ -60,7 +63,7 @@ Maintenance
 The Dreamhack installation that is installed is up-to-date at the time of
 setup, but if you wish to keep it up-to-date you will need to do so yourself.
 Instructions on doing so can be found at:
-  http://wiki.dwscoalition.org/notes/Dev_Maintenance
+  http://wiki.dwscoalition.org/wiki/index.php/Dev_Maintenance
 
 Although your Dreamhack is ready to run, you may be interested in editing
 the $LJHOME/etc/config-local.pl file in order to further customize the options
@@ -83,37 +86,43 @@ Resources
 If you're looking for a guide on what to do next, there are a number of
 resources on our wiki that you might find useful:
 
-  * http://wiki.dwscoalition.org/notes/Beginning_dev_checklist
+  * http://wiki.dwscoalition.org/wiki/index.php/Beginning_dev_checklist
       This is an overview for beginning developers that starts at the *very*
       beginning, which may be useful to some people.
 
-  * http://wiki.dwscoalition.org/notes/Development
+  * http://wiki.dwscoalition.org/wiki/index.php/Development
       An overview of development topics.
 
-  * http://wiki.dwscoalition.org/notes/Dev_Getting_Started
+  * http://wiki.dwscoalition.org/wiki/index.php/Dev_Getting_Started
       An overview of getting started.
 
-  * http://wiki.dwscoalition.org/notes/Bugzilla
+  * http://wiki.dwscoalition.org/wiki/index.php/Version_Control
+      A brief overview of how to use git, the versioning system we use. This
+      also includes information on how to make a pull request on GitHub so that
+      your changes can be committed.
+
+  * http://wiki.dwscoalition.org/wiki/index.php/Bugzilla
       An overview of the Bugzilla ticket system, including links to useful
       searches.
 
-  * http://wiki.dwscoalition.org/notes/Dev_Version_Control
-      Some notes on working with the version control systems in use for
-      Dreamwidth code.
-
 Other articles can be found at this URL:
-  http://wiki.dwscoalition.org/notes/Category:Development
+  http://wiki.dwscoalition.org/wiki/index.php/Category:Development
 
-Submitting Patches
-==================
+Submitting your Changes
+=======================
 
-The process of submitting patches can be found on the wiki:
-  http://wiki.dwscoalition.org/notes/Dev_Patches#Creating_Patches
+Once you've made changes to the code, you can submit them for review by making
+a pull request on GitHub. Your Dreamhack has already been set up with your
+dw-free/dw-nonfree forks set as the origin, so you simply need to push your
+changes and then hop onto the GitHub website and send a pull request.
+
+The process for doing this can be found on the wiki:
+  http://wiki.dwscoalition.org/wiki/index.php/Version_Control
 
 Note that you will need a Contributor Licensing Agreement (CLA) on file with
-Dreamwidth Studios, LLC before your patches can be accepted into the codebase.
+Dreamwidth Studios, LLC before your changes can be accepted into the codebase.
 More information on CLAs can be found on the wiki:
-  http://wiki.dwscoalition.org/notes/Contributor_Licensing_Agreement
+  http://wiki.dwscoalition.org/wiki/index.php/Contributor_Licensing_Agreement
 
 Community
 =========
@@ -122,7 +131,7 @@ There is a thriving community of Dreamwidth pioneers, including coders,
 designers, testers, and others; most of us live on IRC at irc.freenode.net,
 on the #dreamwidth channel. If you have a query or concern, you can often get
 an answer in real-time here. (If you're not sure how to join us, take a look
-at http://wiki.dwscoalition.org/notes/IRC_help .)
+at http://wiki.dwscoalition.org/wiki/index.php/IRC_help .)
 
 There is also a sister channel, #dreamwidth-dev, specifically for developers.
 You'll never be derided for anything in either channel, so don't worry that
@@ -164,19 +173,12 @@ home directory:
       This directory is the first entry in your PATH environment variable, and
       contains the following scripts:
 
-        * cvsreport.pl - this is a symlink to the real cvsreport.pl, for ease
-                         of use.
         * start-apache - starts your Apache instance.
         * stop-apache  - stops your Apache instance.
-        * tocvs.real   - this isn't directly executable - instead, it's
-                         aliased in your ~/.bashrc and sourced. Use 'tocvs'
-                         to switch between your /cvs and live directories
-                         easily.
 
       If you need more scripts in your PATH, this is the place to add them. A
-      selection of scripts, as well as full documentation on 'tocvs', can be
-      found at:
-        http://wiki.dwscoalition.org/notes/Dev_Maintenance#Scripting
+      selection of scripts can be found at:
+        http://wiki.dwscoalition.org/wiki/index.php/Dev_Maintenance#Scripting
 
   * dw/
       This is where your Dreamhack installation lives, and is the target of the
@@ -186,6 +188,13 @@ home directory:
   * crontab-import
       This file contains a sample crontab which you may import if you need to.
       Instructions on doing so are contained in the file.
+
+  * .gitconfig
+      This file (which is hidden by default because of the dot at the start of
+      its name) is how you can configure git. On a new install, the 'name' and
+      'email' fields are already filled in by the automatic installer; you can
+      change these if you wish your changes to be credited to another name or
+      email address.
 
 Epilogue
 ========

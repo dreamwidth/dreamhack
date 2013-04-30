@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+
+use LWP::Simple;
+use JSON;
+
+my ($gitname) = @ARGV;
+
+#if ($gitname=~/[^a-zA-Z0-9]/) {   # total guess on my part, might need changing
+
+# check to see if the GitHub account exists
+my $userout = get("https://api.github.com/users/$gitname");
+if (!defined $userout) {
+  print STDERR "GitHub account '$gitname' does not exist or an error occurred communicating with GitHub.\n";
+  exit 1;
+}
+my $u = decode_json($userout);
+my $canon = $u->{'login'};   # this is the canonically-cased name, necessary for setting up the repos.
+print STDERR "GitHub user '$canon' found, checking repos...\n";
+
+my @repos = qw(dw-free dw-nonfree);
+foreach my $repo (@repos) {
+  print STDERR "$canon/$repo... ";
+  my $repoout = get("https://api.github.com/repos/$canon/dw-free");
+  if (!defined $repoout) {
+    print STDERR "doesn't exist (or communication failure) :(\n";
+    exit 2;
+  }
+  my $r = decode_json($repoout);
+  # check that the owner matches
+  if ($r->{'owner'}->{'id'} != $u->{'id'}) {
+    print STDERR "exists, but isn't owned by $canon :(\n";
+    exit 3;
+  }
+  print STDERR "exists :D\n";
+}
+print $canon;
