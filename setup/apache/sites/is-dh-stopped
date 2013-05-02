@@ -1,0 +1,21 @@
+<VirtualHost *:6936>
+	ServerName is-dh-stopped.hack.dreamwidth.net
+
+	DocumentRoot /dreamhack/www-nohack
+	<Directory /dreamhack/www-nohack>
+		AllowOverride None
+		Order allow,deny
+		Allow from all
+	</Directory>
+
+	Options +ExecCGI
+	AddHandler cgi-script .cgi
+
+	ErrorDocument 404 /test-dh.cgi
+	DirectoryIndex test-dh.cgi
+
+	RewriteEngine on
+	RewriteCond %{REQUEST_METHOD} ^POST$
+	RewriteCond %{REQUEST_URI} !^/test-dh.cgi
+	RewriteRule ^.*$ /test-dh.cgi
+</VirtualHost>

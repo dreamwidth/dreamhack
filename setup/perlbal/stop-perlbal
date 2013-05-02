@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+# shut it down nicely
+open(TELNET, "|-", "/usr/bin/telnet 127.0.0.1 60000 >/dev/null 2>/dev/null");
+print TELNET "shutdown graceful\n";
+sleep(2);
+close(TELNET);
+
+unlink("/home/perlbal/perlbal.pid");

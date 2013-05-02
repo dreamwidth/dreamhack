@@ -1,0 +1,5 @@
+PATH="/dreamhack/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+* * * * * /dreamhack/lib/bin/cron/maintain-dreamhacks 2>&1
+0 0 * * * /dreamhack/lib/bin/cron/warnquotas 2>&1
+0 0 * * 0 /dreamhack/lib/bin/cron/update-skel 2>&1
+30 0 * * * /dreamhack/lib/bin/cron/remake-daily 2>&1

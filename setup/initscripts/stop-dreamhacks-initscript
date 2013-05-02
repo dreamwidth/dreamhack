@@ -1,0 +1,22 @@
+#!/bin/bash
+
+case $1 in
+  start)
+    echo "This initscript does not support the 'start' parameter."
+    exit 3
+  ;;
+  stop)
+    for dreamhack in `/dreamhack/lib/bin/all-apache-dirs`; do
+      if [ -f "$dreamhack/etc/httpd.pid" ]; then
+        echo "Stopping Dreamhack at $dreamhack..."
+        echo "  /usr/sbin/apache2ctl -f $dreamhack/conf/httpd.conf -k stop"
+        /usr/sbin/apache2ctl -f $dreamhack/conf/httpd.conf -k stop
+        sleep 1
+      fi
+    done
+  ;;
+  *)
+    echo "Usage: $0 stop"
+    exit 3
+  ;;
+esac
