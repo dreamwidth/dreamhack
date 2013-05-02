@@ -24,6 +24,9 @@ if ($count == 0) {
   print "Last port belonging to '$username' deleted, deleting user...\n";
   $sth = $dbh->prepare('DELETE FROM `users` WHERE `username` = ?') || die "Could not prepare second DELETE statement: $!";
   $sth->execute($username) || die "Could not execute second DELETE statement: $!";
+
+  $sth = $dbh->prepare('DELETE FROM `user_emails` WHERE `username` = ?') || die "Could not prepare third DELETE statement: $!";
+  $sth->execute($username) || die "Could not execute third DELETE statement: $!";
 }
 
 exit(0);

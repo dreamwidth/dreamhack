@@ -6,3 +6,4 @@
 /dreamhack/www/dev/coverage
 /dreamhack/opt/migration/*
 /dreamhack/opt/archive/*
+/dreamhack/.git

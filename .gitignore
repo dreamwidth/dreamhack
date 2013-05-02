@@ -1,0 +1,11 @@
+backup/*.tar.gz
+backup/out
+home/[0-9]*
+local/settings.*
+opt/archive/*
+opt/migration/*
+var/maintain.d
+www/dev/coverage
+www/dev/docs
+www/dev/test
+www/dev/untracked

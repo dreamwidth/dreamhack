@@ -1,0 +1,140 @@
+#!/usr/bin/perl
+
+# WARNING: This script will need to be changed to work with the new user_emails table before it can be used again.
+
+use Passwd::Unix qw(passwd gecos home uid gid);
+
+require '/dreamhack/lib/dreamhacks-db.pl';
+require '/dreamhack/local/helpers/settings.pl';
+my $dh_settings = dh_settings('root');
+
+my $incomingdir = "/dreamhack/opt/migration";
+
+my ($username) = @ARGV;
+if (!defined $username) { die "$0: no username specified"; }
+
+if ($username =~ /[^0-9a-z\-_]/) { die "$0: username '$username' contains unexpected characters"; }
+
+my $cfgfile = "$incomingdir/$username.cfg";
+open(my $fh, "<:encoding(utf-8)", $cfgfile) || die "$0: could not open '$cfgfile' for reading: $!";
+my %settings = ();
+while (<$fh>) {
+  my $line = $_;
+  chomp($line);
+  my ($key, @value) = split(/=/, $line);
+  $settings{$key} = join("=", @value);
+}
+close($fh);
+
+foreach my $key (qw(username ssh_username email preferred_name lj_username dw_username irc_nick port domain password quota version sqlpassword shell)) {
+  if (!defined $settings{$key}) { die "$0: setting '$key' does not exist in $cfgfile"; }
+}
+if ($username ne $settings{'ssh_username'}) { die "$0: username in '$cfgfile' ('$settings{'username'}') does not match filename ('$username')"; }
+if ($settings{'preferred_name'} =~ /[^0-9A-Za-z \(\)\-\.\\_\/]/) { die "$0: preferred name of '$username' includes invalid characters"; }
+#if ($settings{'preferred_name'} =~ /[^0-9A-Za-z \(\)\-\.\\_]/) { die "$0: preferred name of '$username' includes invalid characters"; }
+if ($settings{'lj_username'} eq "") { undef $settings{'lj_username'}; }
+if ($settings{'dw_username'} eq "") { undef $settings{'dw_username'}; }
+if ($settings{'irc_nick'} eq "") { undef $settings{'irc_nick'}; }
+
+# before creating the user, check that we have the tarball and SQL
+my $tarball = "$incomingdir/$username.tar.gz";
+if (!-f $tarball) { die "$0: tarball '$tarball' does not exist"; }
+my $sqlfile = "$incomingdir/$username.sql";
+if (!-f $sqlfile) { die "$0: SQL file '$sqlfile' does not exist"; }
+
+# finally, let's check that they don't already exist in the database!
+my $sth = $dbh->prepare("SELECT username FROM users WHERE ssh_username = ?");
+$sth->execute($settings{'ssh_username'});
+if ($sth->rows > 0) {
+  die "Sanity check: user " . $settings{'ssh_username'} . " already exists in database! Aborting.\n";
+}
+
+# okay, let's do this!
+my $prefname = $settings{'preferred_name'};
+my $sname = $settings{'username'};
+my $port = $settings{'port'};
+my $uhome = "/dreamhack/home/$port-$sname";
+my $quota = $settings{'quota'} + 0;
+my $sqlpass = $settings{'sqlpassword'};
+my $shell = $settings{'shell'};
+
+my $dh_rootuser = $dh_settings->{'dh_db_root_username'};
+my $dh_rootpass = $dh_settings->{'dh_db_root_password'};
+
+open(my $bash, "|-", "/bin/bash");
+print $bash <<OUT;
+echo Adding user...
+useradd -c "$prefname" -g dreamhack -K UMASK=0077 -d $uhome -s "$shell" $username
+echo Setting quota...
+setquota $username 0 $quota 0 0 /
+#echo Changing shell...
+#chsh --shell /bin/bash $username
+echo Extracting homedir...
+mkdir $uhome
+chmod 711 $uhome
+tar -C $uhome -zxpf $tarball
+echo Chowning homedir...
+chown -R $username:dreamhack $uhome
+if [ -f "$incomingdir/$username.crontab" ]; then
+  echo Installing crontab...
+  crontab -u $username $incomingdir/$username.crontab
+fi
+echo Creating database...
+mysql -u"$dh_rootuser" -p"$dh_rootpass" <<MYSQL
+CREATE DATABASE \\`dreamhack_$sname\\`;
+GRANT ALL PRIVILEGES ON \\`dreamhack_$sname\\`.* TO 'dh_$sname'\@'localhost' IDENTIFIED BY PASSWORD '$sqlpass'
+MYSQL
+echo Importing database...
+mysql -u"$dh_rootuser" -p"$dh_rootpass" dreamhack_$sname < $sqlfile
+OUT
+close($bash);
+
+print "Setting up perlbal...\n";
+my $perlbal = <<OUT;
+CREATE POOL ${sname}_pool
+  POOL ${sname}_pool ADD 127.0.0.1:$port
+
+CREATE SERVICE $sname
+  SET role            = reverse_proxy
+  SET pool            = ${sname}_pool
+  SET persist_client  = on
+  SET persist_backend = on
+  SET verify_backend  = on
+ENABLE $sname
+
+VHOST dreamhack *.$sname.hack.dreamwidth.net = $sname
+OUT
+my $confname = "/home/perlbal/sites/$port-$sname.conf";
+open(my $pbconf, ">:encoding(ascii)", $confname);
+print $pbconf $perlbal;
+#print "$perlbal\n";
+close($pbconf);
+system("chown perlbal:perlbal $confname");
+open(my $tn, "|-", "/usr/bin/telnet 127.0.0.1 60000 >/dev/null 2>/dev/null");
+print $tn $perlbal;
+sleep(2);
+close($tn);
+
+print "Inserting user into database...\n";
+my $sth = $dbh->prepare("INSERT INTO `users` (`username`, `lj_username`, `dw_username`, `irc_nick`, `ssh_username`, `preferred_name`, `homedir`, `email`, `version`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)") || die "Could not prepare first insert: $!";
+$sth->execute(
+  $sname,
+  $settings{'lj_username'},
+  $settings{'dw_username'},
+  $settings{'irc_nick'},
+  $username,
+  $prefname,
+  $uhome,
+  $settings{'email'},
+  $settings{'version'},
+) || die "Could not execute first insert: $!";
+
+$sth = $dbh->prepare("INSERT INTO `userports` (`port`, `username`, `apachedir`, `domain`) VALUES (?, ?, ?, ?)") || die "Could not prepare second insert: $!";
+$sth->execute(
+  $port,
+  $sname,
+  "apache",
+  "$sname.hack.dreamwidth.net",
+) || die "Could not execute second insert: $!";
+
+passwd($username, $settings{'password'});

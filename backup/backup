@@ -1,4 +1,6 @@
 #!/bin/bash
+source /dreamhack/local/settings.root
+
 DHROOT="/dreamhack"
 OUT="$DHROOT/backup/out"
 HINTS="$OUT"/install-hints
@@ -22,7 +24,7 @@ cp -a /etc/init.d/stop-dreamhacks "$OUT"/stop-dreamhacks-initscript
 echo Dumping crontab...
 crontab -l > "$OUT"/root-crontab
 echo Dumping database...
-mysqldump -udreamhacks -p"gPLUqUJhJE8w" dreamhacks > "$OUT"/dreamhacks-database.sql
+mysqldump -u"$dh_db_readwrite_username" -p"$dh_db_readwrite_password" dreamhacks > "$OUT"/dreamhacks-database.sql
 echo Archiving Apache site configs...
 tar zcf "$OUT"/apache-sites.tar.gz /etc/apache2/sites-{available,enabled} /etc/apache2/ports.conf
 echo Backing up /etc/motd.tail...
@@ -208,12 +210,14 @@ dd if=/dev/random bs=9 count=1 2>/dev/null | base64
 
 18. Create MySQL users for 'dreamhacks' and 'dreamhacks_ro', and create a
     database 'dreamhacks'. Give the user 'dreamhacks' read-write access to the
-    DB, along with LOCK TABLES; give 'dreamhacks_ro' read-only access, along
-    with LOCK TABLES:
+    DB, along with LOCK TABLES; give 'dreamhacks_ro' read-only access to the
+    'users' and 'userports' tables only, along with LOCK TABLES:
 
 CREATE DATABASE dreamhacks;
 GRANT SELECT, INSERT, UPDATE, DELETE, LOCK TABLES ON \`dreamhacks\`.* TO 'dreamhacks'@'localhost' IDENTIFIED BY 'readwrite_password_above';
-GRANT SELECT, INSERT, LOCK TABLES ON \`dreamhacks\`.* TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
+GRANT SELECT, INSERT ON \`dreamhacks\`.\`users\` TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
+GRANT SELECT, INSERT ON \`dreamhacks\`.\`userports\` TO 'dreamhacks_ro'@'localhost';
+GRANT LOCK TABLES ON \`dreamhacks\`.* TO 'dreamhacks_ro'@'localhost';
 
 19. Import the dreamhacks-database.sql dump with the command:
       mysql -uroot -p dreamhacks < dreamhacks-database.sql
