@@ -1,9 +1,8 @@
-/dreamhack/.git
 /dreamhack/backup/*.tar.gz
 /dreamhack/backup/out/*
 /dreamhack/home/*
 /dreamhack/opt/archive/*
 /dreamhack/opt/dhroot/cvs/*
 /dreamhack/opt/migration/*
-/dreamhack/var/skel/dw/cvs/*
+/dreamhack/var/maintain.d/*
 /dreamhack/www/dev/coverage
