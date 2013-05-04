@@ -1,0 +1,25 @@
+#!/bin/sh
+
+test -f /usr/local/bin/perlbal || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+start)	log_daemon_msg "Starting perlbal" "perlbal"
+        start-stop-daemon --start --quiet --chuid perlbal:perlbal --exec /home/perlbal/start-perlbal
+        log_end_msg $?
+	;;
+stop)	log_daemon_msg "Stopping perlbal" "perlbal"
+        start-stop-daemon --start --quiet --chuid perlbal:perlbal --exec /home/perlbal/stop-perlbal
+        log_end_msg $?
+        ;;
+restart) log_daemon_msg "Restarting perlbal" "perlbal" 
+        start-stop-daemon --start --quiet --chuid perlbal:perlbal --exec /home/perlbal/stop-perlbal
+        start-stop-daemon --start --quiet --chuid perlbal:perlbal --exec /home/perlbal/start-perlbal
+        log_end_msg $?
+        ;;
+*)	log_action_msg "Usage: /etc/init.d/perlbal {start|stop|restart}"
+        exit 2
+        ;;
+esac
+exit 0

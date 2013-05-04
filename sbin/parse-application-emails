@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+
+# this script is designed to be run and then the text of the email sent by the application form given via stdin
+# (that is, just a straight copy-and-paste from the email client)
+# It will then run the appropriate commands for you if wanted
+# NOTE: This version of the script requires an additional 'gitname' field at the bottom which isn't currently sent via the application form
+
+my $port = `"ls" -1 /dreamhack/home | sed -e 's/-/ /' | awk '{ print \$1 }' | sort -n | tail -1`;
+$port++;
+print "Next port number: $port\n";
+
+my @cmds = ();
+
+my %dat;
+while (<>) {
+	if ( /^(\w+): (.+?)$/ ) {
+		if ( $1 eq 'username' ) {
+			%dat = ( username => lc($2) );
+		} elsif ( $1 eq 'gitname' ) {
+			$dat{$1} = $2;
+
+			die "$dat{username} username invalid\n" unless $dat{username} =~ /^[\w\d\-]+$/;
+			if ( `"ls" /dreamhack/home/*-$dat{username} 2> /dev/null` ) {
+				warn "$dat{username} already in use\n";
+				next;
+			}
+
+			die "$dat{username} invalid email\n" unless $dat{email} =~ /^.+?@.+?\..+?$/;
+#			die "$dat{username} invalid irc name\n" if $dat{ircname} =~ /\s/;
+
+			$dat{ljname} = lc($dat{ljname}) || '-';
+			$dat{dwname} = lc($dat{dwname}) || '-';
+			$dat{gitname}  ||= '-';
+			$dat{prefname} ||= 'Unknown User';
+
+			push(@cmds, qq{dh-newuser $dat{username} $port "$dat{email}" "$dat{prefname}" $dat{gitname} $dat{ljname} $dat{dwname}});
+			$port++;
+		} else {
+			$dat{$1} = $2;
+		}
+	}
+}
+
+foreach my $cmd (@cmds) {
+	print "  $cmd\n";
+	print "Execute this command? [Y/n]\n";
+	my $input = <STDIN>;
+	chomp($input);
+	$input = lc($input);
+	if ($input ne "n" && $input ne "no") {
+		system($cmd);
+	}
+}
