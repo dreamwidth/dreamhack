@@ -42,7 +42,9 @@ print $cfg "quota=$hard\n";
 $sth->finish;
 $dbh->disconnect;
 
-$dbh = DBI->connect("DBI:mysql:mysql:localhost", $dh_settings->{'dh_db_root_username'}, $dh_settings->{'dh_db_root_password'});
+my $rootmysqluser = $dh_settings->{'dh_db_root_username'};
+my $rootmysqlpass = $dh_settings->{'dh_db_root_password'};
+$dbh = DBI->connect("DBI:mysql:mysql:localhost", $rootmysqluser, $rootmysqlpass);
 if (!defined $dbh) {
   die "Could not connect to server to read SQL user information: " . DBI->errstr;
 }
@@ -66,7 +68,7 @@ my $name = $user->{'ssh_username'};
 open(my $bash, "|-", "/bin/bash");
 print $bash <<OUT;
 echo Dumping SQL...
-mysqldump -uroot -ppoopoohead dreamhack_$sname > $outgoingdir/$name.sql
+mysqldump -u"$rootmysqluser" -p"$rootmysqlpass" dreamhack_$sname > $outgoingdir/$name.sql
 echo Dumping crontab...
 CRONTAB=`crontab -u $name -l`
 if [ "\$?" == "0" ]; then
