@@ -1,0 +1,12 @@
+The settings.root and settings.nonroot files handle a few settings, notably
+those for connecting to the database. Copy over the sample files in samples/
+(renaming them so that they don't have the ".sample" extension), chmod/chown
+the settings.root file so that it can only be read by root, and fill in the
+credentials of the database users (one for the root MySQL user, one with
+read-write access, and the other with read-only access). You'll need both files
+for the various scripts.
+
+    cp samples/settings.root settings.root
+    cp samples/settings.nonroot settings.nonroot
+    chown root:root settings.root
+    chmod 0600 settings.root
