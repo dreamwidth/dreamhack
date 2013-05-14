@@ -19,7 +19,6 @@
 -- Table structure for table `user_emails`
 --
 
-DROP TABLE IF EXISTS `user_emails`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_emails` (
@@ -33,7 +32,6 @@ CREATE TABLE `user_emails` (
 -- Table structure for table `userports`
 --
 
-DROP TABLE IF EXISTS `userports`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `userports` (
@@ -49,7 +47,6 @@ CREATE TABLE `userports` (
 -- Table structure for table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
