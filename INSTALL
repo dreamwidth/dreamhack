@@ -144,8 +144,9 @@ apt-get install libapache2-mod-php5   # if wanted, but not required
     shared system. Also, we'll restart Apache later on, so there's no need to
     worry about it now if you're prompted.
 
-16. Remove the Apache sites-{available,enabled} directories, then copy over the
-    site configs from the repository and enable the 'default' site:
+16. Remove the contents of the Apache sites-{available,enabled} directories,
+    then copy over the site configs from the repository and enable the
+    'default' site:
 
 rm -f /etc/apache2/sites-{available,enabled}/*
 cp /dreamhack/setup/apache/sites/* /etc/apache2/sites-available/.
