@@ -1,0 +1,382 @@
+This repository contains everything you need to set up a new Dreamhack server.
+
+The Dreamhack server runs on Ubuntu. The following installation instructions
+assume that a new Ubuntu server has just been provisioned.
+
+0. (optional things you may need to install)
+
+   You may need to install 'vim', in case you only have 'vim-tiny':
+
+apt-get install vim
+
+   If it's already installed, you probably have 'vim.basic'. Try this instead:
+
+apt-get install vim-nox
+
+1. Before you do anything else, check to make sure you're running on a 64-bit
+   Perl. This command should print "64-bit". If it prints anything else,
+   including an "Invalid type 'Q'" error, you don't have a 64-bit Perl:
+
+perl -e 'print unpack("Q", pack("Q", length(sprintf("%b", ~0)))) . "-bit\n";'
+
+   (This last check brought to you by getting to the test-suite step and
+   finding out that all the previous steps were for nothing.)
+
+2. First, set the hostname and mailname (adjust the domain if necessary):
+
+echo hack.dreamwidth.net > /etc/hostname
+cp /etc/hostname /etc/mailname
+hostname -F /etc/hostname
+
+   Then, add /dreamhack/sbin to the beginning of root's PATH, with a line like
+   this in /root/.bash_aliases:
+     export PATH="/dreamhack/sbin:$PATH"
+
+    Log out of root, and then back in again to make these changes take effect.
+    The hostname will be automatically set at boot by the 'hostname' service.
+
+3. Add the hostname of the server to the /etc/hosts file:
+
+vi /etc/hosts
+
+4. Set the timezone to Etc/UTC using the menu provided by this command:
+
+dpkg-reconfigure tzdata
+
+   In newer Ubuntus, this will be listed under the "None of the above" option.
+   If that option doesn't exist, it'll be in "Etc" as expected.
+
+5. Create the 'dreamhack' and 'dreamhack-backup' groups:
+
+groupadd dreamhack
+groupadd dreamhack-backup
+
+6. Install Git:
+
+apt-get update
+apt-get install git
+
+   This will also install git-man and liberror-perl.
+
+7. Clone the Dreamhack repository to /dreamhack:
+
+cd /
+git clone git://github.com/dreamwidth/dreamhack
+
+8. Add the Dreamhack bashrc file to the global bashrc file:
+
+echo "source /dreamhack/etc/bashrc" >> /etc/bash.bashrc
+
+9. Create a perlbal user with a home directory:
+
+useradd -m perlbal
+
+   Don't bother giving the user a password - nobody needs to log into this
+   account.
+
+10. Copy the Perlbal support files:
+
+su -c "cp -r /dreamhack/setup/perlbal/* /home/perlbal/." perlbal
+
+11. Edit the /home/perlbal/sites/0000-default.conf file and check that the
+    IP address listed is the right one. If not, change it. (This step isn't
+    vital as it just controls what page gets returned when an IP address is
+    used instead of a name, but hey.)
+
+    Additionally, make sure that the domains in the file are correct. That is,
+    if you're not using "hack.dreamwidth.net", make sure it uses the right
+    domain.
+
+12. Copy the initscripts to /etc/init.d/, preserving permissions.
+    (most easily done with 'cp -a'):
+
+cp -a /dreamhack/setup/initscripts/perlbal-initscript /etc/init.d/perlbal
+cp -a /dreamhack/setup/initscripts/stop-dreamhacks-initscript /etc/init.d/stop-dreamhacks
+
+13. Run these commands to add the initscripts to the bootup/shutdown sequence:
+
+update-rc.d perlbal defaults
+update-rc.d stop-dreamhacks stop 20 0 . stop 20 6 .
+
+    You'll get warnings about "missing LSB information" - you can ignore those.
+
+14. Set up iptables to redirect requests from port 80 to port 34951 with the
+    following commands (replacing the IP if it's different, of course):
+
+MYIP="67.207.129.41"
+iptables -t nat -F   # flush any rules that are already there
+iptables -t nat -A PREROUTING -p tcp --dport 80 -d $MYIP -j REDIRECT --to-ports 34951
+iptables -t nat -A OUTPUT -p tcp --dport 80 -d $MYIP -j REDIRECT --to-ports 34951
+iptables -t nat -A OUTPUT -p tcp --dport 80 -o lo -j REDIRECT --to-ports 34951
+
+    (34951 was chosen as this maps to the first six letters of "Perlbal" when
+    you trace the letters up to digits on a QWERTY keyboard, minus the leading
+    zero)
+
+    (If you paste these lines before realising that you need to change the IP,
+    don't panic! Simply repeat the commands again with the IP set to the right
+    one. The first iptables command flushes any rules that already exist.)
+
+    Then, reject all attempts to connect to port 11211 on localhost, to
+    discourage people from listening on that port (the default memcache port;
+    if a memcache server listens on this port, it causes chaos for any
+    Dreamhacks that use the default config):
+
+iptables -A OUTPUT -d 127.0.0.1 -p tcp --destination-port 11211 -j REJECT
+
+   Save this config with '/etc/init.d/iptables save', then make sure that
+   iptables is configured to load this config on startup with 'update-rc.d
+   iptables defaults'.
+
+   If /etc/init.d/iptables doesn't exist, you're probably using a newer Ubuntu.
+   Do "iptables-save > /etc/iptables.rules" instead, then edit
+   /etc/network/interfaces and add this line after the appropriate iface line,
+   indented two spaces:
+
+   pre-up iptables-restore < /etc/iptables.rules
+
+15. Install Apache2, mod_perl, and MySQL (and also PHP, if wanted):
+
+apt-get install apache2-mpm-prefork libapache2-mod-perl2 mysql-server
+apt-get install libapache2-mod-php5   # if wanted, but not required
+
+    Choose any MySQL root password you like, but make it secure - this is a
+    shared system. Also, we'll restart Apache later on, so there's no need to
+    worry about it now if you're prompted.
+
+16. Remove the Apache sites-{available,enabled} directories, then copy over the
+    site configs from the repository and enable the 'default' site:
+
+rm -f /etc/apache2/sites-{available,enabled}/*
+cp /dreamhack/setup/apache/sites/* /etc/apache2/sites-available/.
+a2ensite default
+
+    Don't worry about reloading Apache for now - we'll do that later.
+
+17. Copy over the ports.conf file:
+
+cp /dreamhack/setup/apache/ports.conf /etc/apache2/ports.conf
+
+    (Port 6936 is the port for a project I was working on, which is the
+    'is-dh-stopped' configuration file. Feel free to comment out or delete that
+    Listen line if you want.)
+
+18. Enable the rewrite and include modules:
+
+a2enmod rewrite
+a2enmod include
+
+19. Restart Apache so that all the changes take effect:
+
+service apache2 restart
+
+20. Install Postfix:
+
+apt-get install postfix
+dpkg-reconfigure postfix   # to set up root recipient
+
+21. Generate two random passwords by running this command twice:
+
+dd if=/dev/random bs=9 count=1 2>/dev/null | base64
+
+    One of these passwords will be used for read-only access, and the other for
+    read-write access.
+
+22. Create a 'dreamhacks' database:
+
+mysqladmin -uroot -p create dreamhacks
+
+   Enter your MySQL root password when prompted.
+
+23. Import the MySQL schema file into the newly-created 'dreamhacks' database:
+
+mysql -uroot -p dreamhacks < /dreamhack/setup/dreamhacks-schema.sql
+
+24. Create MySQL users for 'dreamhacks' and 'dreamhacks_ro', and create a
+    database 'dreamhacks'. Give the user 'dreamhacks' read-write access to the
+    DB, along with LOCK TABLES; give 'dreamhacks_ro' read-only access to the
+    'users' and 'userports' tables only, along with LOCK TABLES:
+
+    (You will need to run 'mysql -uroot -p' and enter the MySQL root password
+    you created earlier before running these commands)
+
+GRANT SELECT, INSERT, UPDATE, DELETE, LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks'@'localhost' IDENTIFIED BY 'readwrite_password_above';
+GRANT SELECT, INSERT ON `dreamhacks`.`users` TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
+GRANT SELECT, INSERT ON `dreamhacks`.`userports` TO 'dreamhacks_ro'@'localhost';
+GRANT LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks_ro'@'localhost';
+
+25. Copy the settings files and secure them appropriately:
+
+cp /dreamhack/local/samples/settings.nonroot.sample /dreamhack/local/settings.nonroot
+cp /dreamhack/local/samples/settings.root.sample /dreamhack/local/settings.root
+chmod 600 /dreamhack/local/settings.root
+
+26. Edit the newly-created config files at /dreamhack/local/settings.root and
+    /dreamhack/local/settings.nonroot with your favourite editor to include the
+    various passwords created in the previous steps.
+
+27. Install Mercurial and Subversion:
+
+apt-get install mercurial subversion
+
+    (While the current code doesn't require either, some people may want to
+    look at the LJ code, which would require Subversion. Similarly, Mercurial
+    may still be useful in some cases. Better to have it than not, I feel.)
+
+28. Enable quota support for the filesystem, if it's not already enabled:
+      * apt-get install quota
+      * Edit /etc/fstab to make sure 'usrquota' is listed in the options of the
+        / partition,
+      * Run the following commands (note that it's a forward slash at the end
+        of all these commands - it's a path, NOT a continuation character):
+          mount -o remount /   # remount with quota support enabled
+          quotacheck -mcu /    # create aquota.user file
+          quotaon /            # turn quota checking on
+
+29. Create a user for Dreamhack applications to go to if you haven't already.
+    For example:
+
+useradd -m sophie
+
+    Create a .forward file in their home directory, chown it to them, and point
+    it to an appropriate email address.
+
+30. If necessary, replace all instances of 'sophie' with the correct username
+    in /dreamhack/lib, /dreamhack/sbin and /dreamhack/www/do. (There are
+    numerous other places where you'll also want to change my name!)
+
+31. Install 'build-essential' so that you can build CPAN modules:
+
+apt-get install build-essential
+
+32. Install Perlbal's prerequisites:
+
+apt-get install libyaml-perl        # not actually needed for perlbal, but shuts CPAN up
+apt-get install libsys-syscall-perl
+cpan Danga::Socket
+apt-get install telnet   # used by the initscripts and new user installation, may already be installed
+
+33. Install Perlbal from CPAN:
+
+cpan Perlbal
+
+34. Check the output of 'chpasswd --help'. If the -m option is not listed, edit
+    the /dreamhack/sbin/dh-newuser file and remove that option in the line
+    where chpasswd is called (newer versions of Ubuntu use MD5 automatically).
+
+35. Go to http://wiki.dwscoalition.org/notes/Dreamwidth_Scratch_Installation
+    and run whatever huge 'apt-get install' command is listed under the
+    "Installing necessary packages" heading.
+
+    Next, install the CPAN Perl libraries listed under the "Then" heading.
+    (although Bundle::CPAN is optional, and can take a long time, so you may
+    want to do that one later)
+
+36. Start Perlbal with:
+
+/etc/init.d/perlbal start
+
+    Verify that you can reach the main Dreamhacks site, and that the
+    application process works (and the email is received).
+
+37. Edit /dreamhack/sbin/dh-newuser to modify the variables at the top for your
+    particular installation, especially the domain.
+
+38. Create a new user with dh-newuser to test things out, using the
+    "dreamwidth" Github repos. (And where "dh-daily" appears in the below
+    steps, substitute the SSH username of the account you created.)
+
+39. Run checkconfig.pl:
+
+su - dh-daily
+cd $LJHOME
+bin/checkconfig.pl
+
+    Install any modules which it needs, whether required or optional.
+
+40. Run the test suite:
+
+su - dh-daily
+cd $LJHOME
+prove t/*.t
+
+    These tests should all either pass or be skipped. (As of this writing, the
+    following tests are skipped: t/captcha.t, t/cprod.t,
+    t/directorysearch-extra.t, t/directorysearch.t, t/parsefeed-atom-types.t,
+    t/poll.t, t/usermoves.t)
+
+41. Install memcached, but make sure it doesn't run by default:
+
+apt-get install memcached
+/etc/init.d/memcached stop
+update-rc.d -f memcached remove
+
+42. Install more packages:
+
+# Miscellaneous must-haves
+apt-get install acct emacs joe mc mutt finger info openssh-blacklist openssl-blacklist perl-doc perltidy tcsh tofrodos traceroute zsh
+# To allow spell-checking on the Dreamhacks
+apt-get install aspell
+# Perl modules for the aux Dreamhack scripts:
+apt-get install libquota-perl libfile-temp-perl libpasswd-unix-perl libtext-csv-perl
+cpan Text::CSV::Slurp
+# Modules that some people on the server use for automated testing/formatting:
+apt-get install libperl-critic-perl libpod-coverage-perl libtest-pod-coverage-perl
+# Allow people to generate the (extremely old, LJ-based) documentation:
+apt-get install docbook-xml docbook-xsl xsltproc
+
+43. joe (installed above) sets itself as the default editor, so change it back to nano:
+
+update-alternatives --config editor
+
+44. Copy the motd.tail file to /etc/motd.tail:
+
+cp /dreamhack/setup/motd.tail /etc/motd.tail
+
+45. Move the extra MOTD information out of the way so that users don't see it:
+
+mkdir /etc/update-motd.d-old
+cd /etc/update-motd.d
+ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
+
+    Make sure to leave 99-footer as it's the file that prints motd.tail.
+
+46. Reboot the server so that the MOTD is regenerated. Check that perlbal and
+    Apache still come back up after the reboot. (The Dreamhack you created
+    won't, but that's fine; individual Dreamhacks don't get started back up.)
+
+    Check also that the iptables rules were restored correctly:
+
+iptables -t nat -L
+iptables -L
+
+47. Import the root-crontab file:
+
+crontab /dreamhack/setup/root-crontab
+
+    (If the Daily Snapshot isn't done yet, then do 'crontab -e' afterwards and
+    comment out the remake-daily line.)
+
+48. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
+    following lines:
+
+Defaults	env_reset
+Defaults	lecture=always
+Defaults	lecture_file=/dreamhack/var/sudo-lecture
+
+49. Edit the /etc/ssh/sshd_config file to add the following line:
+
+AllowTcpForwarding no
+
+    Then, restart SSH:
+
+service ssh restart
+
+    If the above line doesn't work, try:
+
+/etc/init.d/ssh restart
+
+    These configuration changes prevent people from abusing SSH to forward to
+    other, remote sites.
+
+You should now be done. :)
