@@ -14,23 +14,21 @@ mkdir "$OUT"
 mkdir "$HINTS"
 
 echo   BACKING UP:
+echo Getting currently checked out commit...
+cd "$DHROOT"
+CURRENTCOMMIT=`git rev-parse HEAD`
+cd /root
+
+# we'll continue backing up /dreamhack as it doesn't take much space and hey, it's another backup. We don't need it though.
 echo Backing up /dreamhack...
 tar zcf "$OUT"/dreamhack.tar.gz -X "$DHROOT"/backup/dreamhack-exclude.lst "$DHROOT"
-echo Backing up /home/perlbal...
-tar zcf "$OUT"/perlbal-homedir.tar.gz /home/perlbal
-echo Copying initscripts...
-cp -a /etc/init.d/perlbal "$OUT"/perlbal-initscript
-cp -a /etc/init.d/stop-dreamhacks "$OUT"/stop-dreamhacks-initscript
-echo Dumping crontab...
-crontab -l > "$OUT"/root-crontab
+
+echo Backing up /home/perlbal/sites...
+tar zcf "$OUT"/perlbal-sites.tar.gz /home/perlbal/sites
+
 echo Dumping database...
 mysqldump -u"$dh_db_readwrite_username" -p"$dh_db_readwrite_password" dreamhacks > "$OUT"/dreamhacks-database.sql
-echo Archiving Apache site configs...
-tar zcf "$OUT"/apache-sites.tar.gz /etc/apache2/sites-{available,enabled} /etc/apache2/ports.conf
-echo Backing up /etc/motd.tail...
-cp -a /etc/motd.tail "$OUT"/motd.tail
-echo Backing up helpful root files/scripts...
-tar zcf "$OUT"/root-files.tar.gz /root/{.forward,bin,mark}
+
 echo
 echo   GENERATING INSTALL HINTS:
 echo Dumping "\"dpkg -l\"" output...
@@ -59,366 +57,58 @@ echo Querying CPAN to gather distributions...
 #perl -MCPAN -ne 'chomp; my $m = CPAN::Shell->expand("Module", "$_"); print STDERR $m->{"RO"}->{"CPAN_FILE"} . "\n" if defined $m;' <"$HINTS"/modules.tmp >/dev/null 2>>"$HINTS"/perl-distribs.tmp
 perl -MCPAN -ne 'chomp; my $m = CPAN::Shell->expand("Module", "$_"); if (defined $m) { my $o = $m->cpan_file; if ($o=~/^Contact /) { $o = "$_: $o"; } print STDERR "$o\n"; }' <"$HINTS"/modules.tmp >/dev/null 2>>"$HINTS"/perl-distribs.tmp
 sort "$HINTS"/perl-distribs.tmp | uniq > "$HINTS"/perl-distribs.txt
-rm "$HINTS"/*.tmp
+#rm "$HINTS"/*.tmp
 
 BACKDATE=`date --rfc-3339=seconds`
 
+EXCLUDEFILES=`cat "$DHROOT"/backup/dreamhack-exclude.lst`
+
 echo Writing README file...
 cat <<README > "$OUT"/README
-This backup was made on $BACKDATE.
+This backup was made on $BACKDATE. HEAD was set to commit $CURRENTCOMMIT.
 
-This backup contains only items which cannot be regenerated or reinstalled from
-other sources. (so, no Perl modules, etc; not even Perlbal is included.) As
-such, you will need to install Perl modules as necessary. (To assist with this,
-install hints are available in the install-hints/ directory, listing all the
-packages that were installed at the time of backup, and all of the Perl
-distributions corresponding with the installed modules, whether installed from
-CPAN or apt-get.)
+This backup contains:
 
-To restore this backup if needed, do the following:
+* dreamhack.tar.gz
+    A full backup of the /dreamhack directory, excluding the following
+    files/directories:
 
-0. (optional things you may need to install)
+$EXCLUDEFILES
 
-   You may need to install 'vim', in case you only have 'vim-tiny':
-apt-get install vim
+* perlbal-sites.tar.gz
+    All the site configs for Perlbal.
 
-1. Before you do anything else, check to make sure you're running on a 64-bit
-   Perl. This command should print "64-bit". If it prints anything else,
-   including an "Invalid type 'Q'" error, you don't have a 64-bit Perl:
+* dreamhacks-database.sql
+    A complete backup of the 'dreamhacks' database.
 
-perl -e 'print unpack("Q", pack("Q", length(sprintf("%b", ~0)))) . "-bit\\n";'
+* install-hints/
+    A directory that contains listings of all the Ubuntu packages and Perl
+    distributions that were installed at the time this backup was made. This
+    may assist you in restoring any needed packages/modules.
 
-   (This last check brought to you by getting to the test-suite step and
-   finding out that all the previous steps were for nothing.)
+This backup may be used for creating a new server in conjunction with the
+install instructions, but it is strongly recommended that you use the Git
+repository at https://github.com/dreamwidth/dreamhack instead. (See the INSTALL
+file in the root of the repository for installation instructions.)
 
-2. First, set the hostname and mailname:
+Should you need to use this backup to set up a new server, however,
+installation instructions may be found in the INSTALL file in
+dreamhacks.tar.gz; when asked to clone the repository, you should untar this
+file instead. Please also note that this backup does not include the
+/dreamhack/.git directory; you will need to create it yourself by runingn the
+following commands after untarring dreamhack.tar.gz:
 
-echo hack.dreamwidth.net > /etc/hostname
-cp /etc/hostname /etc/mailname
-hostname -F /etc/hostname
+cd $DHROOT
+git clone --bare git://github.com/dreamwidth/dreamhack .git
+git config core.bare false
+git reset --soft $CURRENTCOMMIT
 
-   Then, add /dreamhack/sbin to the beginning of root's PATH, with a line like
-   this in /root/.bash_aliases:
-     export PATH="/dreamhack/sbin:\$PATH"
+This will create the Git repository and set its HEAD to the commit that was
+currently checked out when this backup was made without touching the working
+directory, which should preserve data integrity.
 
-    Log out of root, and then back in again to make these changes take effect.
-    The hostname will be automatically set at boot by the 'hostname' service.
-
-3. Add the hostname of the server to the /etc/hosts file:
-
-vi /etc/hosts
-
-4. Set the timezone to Etc/UTC using the menu provided by this command:
-
-dpkg-reconfigure tzdata
-
-5. Create the 'dreamhack' and 'dreamhack-backup' groups:
-
-groupadd dreamhack
-groupadd dreamhack-backup
-
-6. Untar dreamhack.tar.gz to the root directory. A new directory, /dreamhack,
-   will be created:
-
-tar -zxvf dreamhack.tar.gz -C /
-
-7. Add the Dreamhack bashrc file to the global bashrc file:
-
-echo "source /dreamhack/etc/bashrc" >> /etc/bash.bashrc
-
-8. Create a perlbal user:
-
-useradd perlbal
-
-   Don't bother setting up a home directory - that's the next step - or giving
-   the user a password.)
-
-9. Untar perlbal-homedir.tar.gz to the root directory. The /home/perlbal
-   directory will be created:
-
-tar -zxvf perlbal-homedir.tar.gz -C /
-
-10. Copy the initscripts to /etc/init.d/, preserving permissions.
-    (most easily done with 'cp -a'):
-
-cp -a perlbal-initscript /etc/init.d/perlbal
-cp -a stop-dreamhacks-initscript /etc/init.d/stop-dreamhacks
-
-11. Run these commands to add the initscripts to the bootup/shutdown sequence:
-
-update-rc.d perlbal defaults
-update-rc.d stop-dreamhacks stop 20 0 . stop 20 6 .
-
-12. Set up iptables to redirect requests from port 80 to port 34951 with the
-    following commands (replacing the IP if it's different, of course):
-
-iptables -t nat -A PREROUTING -p tcp --dport 80 -d 67.207.129.41 -j REDIRECT --to-ports 34951
-iptables -t nat -A OUTPUT -p tcp --dport 80 -d 67.207.129.41 -j REDIRECT --to-ports 34951
-iptables -t nat -A OUTPUT -p tcp --dport 80 -o lo -j REDIRECT --to-ports 34951
-
-    (34951 was chosen as this maps to the first six letters of "Perlbal" when
-    you trace the letters up to digits on a QWERTY keyboard, minus the leading
-    zero)
-
-    Then, reject all attempts to connect to port 11211 on localhost, to
-    discourage people from listening on that port (the default memcache port;
-    if a memcache server listens on this port, it causes chaos for any
-    Dreamhacks that use the default config):
-
-iptables -A OUTPUT -d 127.0.0.1 -p tcp --destination-port 11211 -j REJECT
-
-   Save this config with '/etc/init.d/iptables save', then make sure that
-   iptables is configured to load this config on startup with 'update-rc.d
-   iptables defaults'.
-
-   If /etc/init.d/iptables doesn't exist, you're probably using a newer Ubuntu.
-   Do "iptables-save > /etc/iptables.rules" instead, then edit
-   /etc/network/interfaces and add this line after the appropriate iface line,
-   indented two spaces:
-
-   pre-up iptables-restore < /etc/iptables.rules
-
-13. Install Apache2, mod_perl, and MySQL (and also PHP, if wanted):
-
-apt-get update
-apt-get install apache2-mpm-prefork libapache2-mod-perl2 mysql-server
-apt-get install libapache2-mod-php5
-
-14. Remove the Apache sites-{available,enabled} directories, then untar
-    apache-sites.tar.gz to the root directory, which will recreate them (and
-    replace ports.conf) with the appropriate configs:
-
-rm -rf /etc/apache2/sites-{available,enabled}
-tar -zxvf apache-sites.tar.gz -C /
-
-15. Enable the rewrite and include modules:
-
-a2enmod rewrite
-a2enmod include
-
-16. Install Postfix:
-
-apt-get install postfix
-dpkg-reconfigure postfix   # to set up root recipient
-
-17. Generate two random passwords by running this command twice:
-
-dd if=/dev/random bs=9 count=1 2>/dev/null | base64
-
-    One of these passwords will be used for read-only access, and the other for
-    read-write access.
-
-18. Create MySQL users for 'dreamhacks' and 'dreamhacks_ro', and create a
-    database 'dreamhacks'. Give the user 'dreamhacks' read-write access to the
-    DB, along with LOCK TABLES; give 'dreamhacks_ro' read-only access to the
-    'users' and 'userports' tables only, along with LOCK TABLES:
-
-CREATE DATABASE dreamhacks;
-GRANT SELECT, INSERT, UPDATE, DELETE, LOCK TABLES ON \`dreamhacks\`.* TO 'dreamhacks'@'localhost' IDENTIFIED BY 'readwrite_password_above';
-GRANT SELECT, INSERT ON \`dreamhacks\`.\`users\` TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
-GRANT SELECT, INSERT ON \`dreamhacks\`.\`userports\` TO 'dreamhacks_ro'@'localhost';
-GRANT LOCK TABLES ON \`dreamhacks\`.* TO 'dreamhacks_ro'@'localhost';
-
-19. Import the dreamhacks-database.sql dump with the command:
-      mysql -uroot -p dreamhacks < dreamhacks-database.sql
-
-    Give the MySQL root password when prompted. (Note that the 'dreamhacks'
-    user has no DROP access, which is needed for this SQL file, which is why
-    we're using root instead)
-
-20. Edit the /dreamhack/lib/dreamhacks-db.pl file and enter the read-write
-    password as the value of the \$dbpassword variable.
-
-    Do the same for /dreamhack/lib/dreamhacks-db-readonly.pl, but for the
-    read-only password.
-
-21. Fix the backup script (/dreamhack/backup/backup) to use the right password
-    in the line that dumps the database; use the read-write password.
-
-22. Install Mercurial, Subversion and Git:
-
-apt-get install mercurial subversion git-core
-
-23. Use 'checkout-skel' to download the Dreamwidth code (omitted in the backup
-    for space reasons), and then 'mvcvs' to move it into the appropriate place
-    in /dreamhack/var/skel.
-
-24. Enable quota support for the filesystem, if it's not already enabled:
-      * apt-get install quota
-      * Edit /etc/fstab to make sure 'usrquota' is listed in the options of the
-        / partition,
-      * Run the following commands (note that it's a forward slash at the end
-        of all these commands - it's a path, NOT a continuation character):
-          mount -o remount /   # remount with quota support enabled
-          quotacheck -mcu /    # create aquota.user file
-          quotaon /            # turn quota checking on
-
-25a. If you plan to recreate Dreamhacks for the accounts that existed when the
-     backup was taken:
-       * Run the 'dhls' script and redirect it to a file,
-       * Use MySQL to TRUNCATE \`users\` and TRUNCATE \`userports\` in the
-         'dreamhacks' database,
-       * Manually use the dh-newuser script with the appropriate values in the
-         file.
-
-    Yes, this is a pain. You could also write a script to do it.
-
-25b. If you *don't* plan to recreate them:
-       * Use MySQL to TRUNCATE \`users\` and TRUNCATE \`userports\` in the
-         'dreamhacks' database,
-       * Remove all the files that start with 7 or 8 in /home/perlbal/sites/ ,
-         leaving only 0000-default.conf:
-           rm /home/perlbal/sites/[78]*
-
-26. Edit the /home/perlbal/sites/0000-default.conf file and check that the
-    IP address listed is the right one. If not, change it. (This step isn't
-    vital as it just controls what page gets returned when an IP address is
-    used instead of a name, but hey.)
-
-27. Create a user for Dreamhack applications to go to. For example:
-
-useradd -m sophie
-
-    Create a .forward file in their home directory, chown it to them, and point
-    it to an appropriate email address.
-
-28. If necessary, replace all instances of 'sophie' with the correct username
-    in /dreamhack/lib, /dreamhack/sbin and /dreamhack/www/do. (There are
-    numerous other places where you'll also want to change my name!)
-
-29. Install Perlbal's prerequisites:
-
-apt-get install libyaml-perl        # not actually needed for perlbal, but shuts CPAN up
-apt-get install libsys-syscall-perl
-cpan Danga::Socket
-apt-get install telnet   # used by the initscripts and new user installation
-
-30. Install Perlbal from CPAN:
-
-cpan Perlbal
-
-31. Check the output of 'chpasswd --help'. If the -m option is not listed, edit
-    the /dreamhack/sbin/dh-newuser file and remove that option in the line
-    where chpasswd is called (newer versions of Ubuntu use MD5 automatically).
-
-32. Go to http://wiki.dwscoalition.org/notes/Dreamwidth_Scratch_Installation
-    and run whatever huge 'apt-get install' command is listed under the
-    "Otherwise" section of the "Installing necessary packages" heading.
-
-    Make sure you ALSO install the Perl libraries given! (although Bundle::CPAN
-    is optional, and can take a long time, so you may want to do that one
-    later)
-
-33. Start Perlbal with:
-
-/etc/init.d/perlbal start
-
-    If this backup was made while Perlbal was running on the old machine -
-    which it almost certainly was - you'll get a warning about Perlbal having
-    died leaving its pid. You can safely ignore this.
-    
-34. Restart Apache with:
-
-/etc/init.d/apache2 restart
-
-    Verify that you can reach the main Dreamhacks site, and that the
-    application process works (and the email is received).
-
-35. Test the ability to create a new user by running
-    /dreamhack/lib/bin/cron/remake-daily . This creates the Daily Snapshot
-    user.  When the command completes, you should be able to go to
-    http://www.daily.hack.dreamwidth.net/ and see the new Dreamwidth
-    installation, which you should test to make sure there are no errors.
-
-36. Run checkconfig.pl:
-
-su - dh-daily
-cd \$LJHOME
-bin/checkconfig.pl --no=ljconfig
-
-    Install any modules which it needs, whether required or optional.
-
-37. Run the test suite:
-
-su - dh-daily
-cd \$LJHOME
-prove t/*.t
-
-    These tests should all either pass or be skipped. (As of this writing, the
-    following tests are skipped: t/cprod.t, t/directorysearch-extra.t,
-    t/directorysearch.t, t/parsefeed-atom-types.t, t/usermoves.t)
-
-38. Install memcached, but make sure it doesn't run by default:
-
-apt-get install memcached
-/etc/init.d/memcached stop
-update-rc.d -f memcached remove
-
-39. Install more packages:
-
-# Miscellaneous must-haves
-apt-get install acct emacs joe mc mutt finger info openssh-blacklist openssl-blacklist perl-doc perltidy tcsh tofrodos traceroute
-# To allow spell-checking on the Dreamhacks
-apt-get install aspell
-# Perl modules for the aux Dreamhack scripts:
-apt-get install libquota-perl libfile-temp-perl libpasswd-unix-perl libtext-csv-perl
-cpan Text::CSV::Slurp
-# Modules that some people on the server use for automated testing/formatting:
-apt-get install libperl-critic-perl libpod-coverage-perl libtest-pod-coverage-perl
-# Allow people to generate the (extremely old, LJ-based) documentation:
-apt-get install docbook-xml docbook-xsl xsltproc
-
-40. joe (installed above) sets itself as the default editor, so change it back to nano:
-
-update-alternatives --config editor
-
-41. Copy the motd.tail file to /etc/motd.tail, preserving permissions:
-
-cp -a motd.tail /etc/motd.tail
-
-42. Move the extra MOTD information out of the way so that users don't see it:
-
-mkdir /etc/update-motd.d-old
-cd /etc/update-motd.d
-ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
-
-43. Reboot the server so that the MOTD is regenerated. Check that perlbal and
-    Apache still come back up after the reboot. (The Daily Snapshot won't, but
-    that's fine; individual Dreamhacks don't get started back up.)
-
-    Check also that the iptables rules were restored correctly:
-
-iptables -t nat -L
-iptables -L
-
-44. Create a Dreamhack for yourself (if you plan to use one; if not, make a
-    test user) with dh-newuser. Log in and check that everything is fine.
-
-45. Import the root-crontab file using 'crontab root-crontab'.
-
-46. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
-    following lines:
-
-Defaults	env_reset
-Defaults	lecture=always
-Defaults	lecture_file=/dreamhack/var/sudo-lecture
-
-47. Unpack root's helpful files/scripts by untarring root-files.tar.gz to the
-    root directory:
-
-tar -zxvf root-files.tar.gz -C /
-
-48. Edit the /etc/ssh/sshd_config file to add the following line:
-
-AllowTcpForwarding no
-
-    Then, restart SSH:
-
-/etc/init.d/ssh restart
-
-    This prevents people from abusing SSH to forward to other, remote sites.
-
-You should now be done. :)
+Please note that this backup does not include users' home directories, merely
+Dreamhack account data.
 README
 
 echo Making tarball...
@@ -429,4 +119,3 @@ chgrp dreamhack-backup "$TARBALL"
 chmod g+r "$TARBALL"
 
 echo Done!
-
