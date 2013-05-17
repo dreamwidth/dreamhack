@@ -95,7 +95,7 @@ Should you need to use this backup to set up a new server, however,
 installation instructions may be found in the INSTALL file in
 dreamhacks.tar.gz; when asked to clone the repository, you should untar this
 file instead. Please also note that this backup does not include the
-/dreamhack/.git directory; you will need to create it yourself by runingn the
+/dreamhack/.git directory; you will need to create it yourself by running the
 following commands after untarring dreamhack.tar.gz:
 
 cd $DHROOT
