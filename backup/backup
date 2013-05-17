@@ -101,7 +101,7 @@ following commands after untarring dreamhack.tar.gz:
 cd $DHROOT
 git clone --bare git://github.com/dreamwidth/dreamhack .git
 git config core.bare false
-git reset --soft $CURRENTCOMMIT
+git reset $CURRENTCOMMIT
 
 This will create the Git repository and set its HEAD to the commit that was
 currently checked out when this backup was made without touching the working
