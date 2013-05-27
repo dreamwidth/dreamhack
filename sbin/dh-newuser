@@ -49,11 +49,18 @@ if [ "$SSHDOMAIN" == "" ]; then
 fi
 
 DELETE=0
+SENDEMAIL=1
 
-if [ "$1" == "--delete" ]; then
-  DELETE=1
+while [[ "$1" =~ ^-- ]]; do
+    if [ "$1" == "--delete" ];   then DELETE=1;
+  elif [ "$1" == "--no-email" ]; then SENDEMAIL=0;
+  else
+    echo "Switch '$1' not recognised"
+    exit 1
+  fi
+
   shift
-fi
+done
 
 USERNAME="$1"
 PORT="$2"
@@ -62,7 +69,6 @@ PREFNAME="$4"
 GITNAME="$5"
 LJUSER="$6"
 DWUSER="$7"
-AUTOMATIC="$8"
 
 UHOME=$BASEHOMEDIR/$PORT-$USERNAME
 UNIXUSER=$USERPREFIX-$USERNAME
@@ -204,14 +210,11 @@ if [ "$DWUSER" == "" ]; then
   DWUSER="-"
 fi
 echo "DWuser: '$DWUSER'"
+echo
 
-# and this
-if [ "$AUTOMATIC" == "" ]; then
-  AUTOMATIC="0"
-else
-  AUTOMATIC="1"
+if [ "$SENDEMAIL" == "0" ]; then
+  echo "Will not automatically send email."
 fi
-echo "  Auto: '$AUTOMATIC'"
 
 perl -e 'eval { require MIME::Base64; }; exit(2) if ($@);'
 if [ "$?" == "2" ]; then
@@ -457,28 +460,6 @@ su -lc "
   \$LJHOME/bin/ljdb < /usr/share/doc/libtheschwartz-perl/schema.sql
 " $UNIXUSER
 
-if [ "$AUTOMATIC" == "0" ]; then
-#  echo "Starting Apache..."
-#  su -lc "start-apache" $UNIXUSER
-#
-#  if [ ! -f $UHOME/apache/etc/httpd.pid ]; then
-#    echo "Apache didn't start, including note in email."
-#    # flag this for inclusion in the email
-#    NOTES="
-#  
-#The automatic $DHNAME setup script failed to start Apache. This could be
-#because of problems within the DW code as it currently stands. You may want to
-#try updating the code by following the instructions at:
-#  http://wiki.dwscoalition.org/notes/Dev_Maintenance
-#
-#To start the server again, use the following command:
-#  start-apache"
-#  fi
-  echo "Not starting Apache for new Dreamhacks."
-else
-  echo "Skipping Apache startup."
-fi
-
 echo "Creating .firstlogin..."
 touch $UHOME/.firstlogin
 chown $UNIXUSER:$DHGROUP $UHOME/.firstlogin
@@ -578,7 +559,7 @@ rm $TEMPFILE
 echo -n "All done! Finished at: "
 date
 
-if [ "$AUTOMATIC" == "0" ]; then
+if [ "$SENDEMAIL" == "1" ]; then
   echo "Sending email..."
   EMAILMSG="Hi $PREFNAME!
 
