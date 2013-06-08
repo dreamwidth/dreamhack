@@ -351,21 +351,26 @@ ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
 iptables -t nat -L
 iptables -L
 
-47. Import the root-crontab file:
+47. Fix the permissions on /dreamhack/var/maintain.d so that everybody can
+    write to it:
+
+chmod ugo+rwx /dreamhack/var/maintain.d
+
+48. Import the root-crontab file:
 
 crontab /dreamhack/setup/root-crontab
 
     (If the Daily Snapshot isn't done yet, then do 'crontab -e' afterwards and
     comment out the remake-daily line.)
 
-48. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
+49. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
     following lines:
 
 Defaults	env_reset
 Defaults	lecture=always
 Defaults	lecture_file=/dreamhack/var/sudo-lecture
 
-49. Edit the /etc/ssh/sshd_config file to add the following line:
+50. Edit the /etc/ssh/sshd_config file to add the following line:
 
 AllowTcpForwarding no
 

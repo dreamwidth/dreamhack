@@ -5,6 +5,7 @@ local/settings.*
 opt/archive/*
 opt/migration/*
 var/maintain.d
+!var/maintain.d/.placeholder
 www/dev/coverage
 www/dev/docs
 www/dev/test
