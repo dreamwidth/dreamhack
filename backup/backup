@@ -57,7 +57,7 @@ echo Querying CPAN to gather distributions...
 #perl -MCPAN -ne 'chomp; my $m = CPAN::Shell->expand("Module", "$_"); print STDERR $m->{"RO"}->{"CPAN_FILE"} . "\n" if defined $m;' <"$HINTS"/modules.tmp >/dev/null 2>>"$HINTS"/perl-distribs.tmp
 perl -MCPAN -ne 'chomp; my $m = CPAN::Shell->expand("Module", "$_"); if (defined $m) { my $o = $m->cpan_file; if ($o=~/^Contact /) { $o = "$_: $o"; } print STDERR "$o\n"; }' <"$HINTS"/modules.tmp >/dev/null 2>>"$HINTS"/perl-distribs.tmp
 sort "$HINTS"/perl-distribs.tmp | uniq > "$HINTS"/perl-distribs.txt
-#rm "$HINTS"/*.tmp
+rm "$HINTS"/*.tmp
 
 BACKDATE=`date --rfc-3339=seconds`
 
