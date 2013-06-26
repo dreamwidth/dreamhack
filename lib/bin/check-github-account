@@ -3,9 +3,14 @@
 use LWP::Simple;
 use JSON;
 
-my ($gitname) = @ARGV;
+my $gitname = <STDIN>;   # since this is going to run as root using user-supplied input, it's a bit more secure to
+                         # insist that input comes from STDIN and not the command line.
+chomp($gitname);
 
-#if ($gitname=~/[^a-zA-Z0-9]/) {   # total guess on my part, might need changing
+if ($gitname=~/(?:^-|[^a-zA-Z0-9\-])/) {
+  print STDERR "GitHub usernames may only contain alphanumeric characters or dashes and cannot begin with a dash.\n";
+  exit 4;
+}
 
 # check to see if the GitHub account exists
 my $userout = get("https://api.github.com/users/$gitname");
