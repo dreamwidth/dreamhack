@@ -192,7 +192,10 @@ if [ "$GITNAME" == "" ]; then
 else
   echo "GitHub: '$GITNAME'"
   # check to see if this GitHub account does everything we need to, as well as getting the canonically-cased username
-  CGITNAME=$($LIBDIR/check-github-account "$GITNAME")
+  CGITNAME=$($LIBDIR/check-github-account <<IN
+$GITNAME
+IN
+)
   if [ "$?" -ne 0 ]; then
     echo "GitHub account does not exist or does not have the repositories needed to continue - see above for details."
     ERROR=1
