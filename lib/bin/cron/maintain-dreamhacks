@@ -92,6 +92,16 @@ sub cmdReinstall {
   my @output = ();
   my @newcommands = ();
 
+  # temporary until we can do time for the reinstaller to work
+  return makeError($username, "Temporary early exit from reinstall", "The automatic reinstaller has been temporarily disabled.", <<MESSAGE);
+The reinstaller has not yet been updated to cope with the new Git-based
+install system - sorry! In the meantime, you can contact Sophie at
+<sophie\@hack.dreamwidth.net\> if you wish to do a reinstall. (It doesn't take
+much of her time, don't worry.)
+MESSAGE
+
+  ### ====================== ###
+
   if ($args[0] && $args[0] eq "--immediate") {
     my $reqtime = $args[1];
     if (time() - $reqtime < 60) {
