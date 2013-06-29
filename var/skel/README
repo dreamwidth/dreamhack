@@ -66,8 +66,8 @@ Instructions on doing so can be found at:
   http://wiki.dwscoalition.org/wiki/index.php/Dev_Maintenance
 
 Although your Dreamhack is ready to run, you may be interested in editing
-the $LJHOME/etc/config-local.pl file in order to further customize the options
-available.
+the $LJHOME/ext/local/etc/config-local.pl file in order to further customize
+the options available.
 
 You can start and stop your Apache instance using the commands "start-apache"
 and "stop-apache". Although the initial setup will give you a working Apache
