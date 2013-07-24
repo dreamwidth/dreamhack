@@ -1,4 +1,4 @@
-<!--#set var="title" value="Apply" -->
+<!--#set var="title" value="Apply - Sent Successfully" -->
 <!--#include virtual="/_header.shtml" -->
           <h1>Apply</h1>
           <h2>Sent Successfully</h2>
