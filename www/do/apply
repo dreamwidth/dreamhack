@@ -30,6 +30,11 @@ else {
     if (!(param($required))) { $error = 1; }
   }
 
+  if (param("submit") eq "Submit") {
+    # this is likely to be spam, send the user to a page which hints at using another browser (just in case it's actually legitimate).
+    $error = 3;
+  }
+
   if ($error == 0) {
     # just send this in an email
     my $msg = new Mail::Send(
@@ -52,6 +57,7 @@ MSG
   my $to = "http://hack.dreamwidth.net/apply-sent.shtml";
      if ($error == 1) { $to = "http://hack.dreamwidth.net/apply-error.shtml"; }
   elsif ($error == 2) { $to = "http://hack.dreamwidth.net/apply-error-mail.shtml"; }
+  elsif ($error == 3) { $to = "http://hack.dreamwidth.net/apply-error-notsent.shtml"; }
   # we're done
   print <<OUT;
 Status: 302 Found
