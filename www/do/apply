@@ -35,6 +35,11 @@ else {
     $error = 3;
   }
 
+  if (($error == 0) && (param("username") =~ /^LR.*\d{3}$/) && (param("notes") =~ /<a href=/)) {
+    # known spam
+    $error = 3;
+  }
+
   if ($error == 0) {
     # just send this in an email
     my $msg = new Mail::Send(
