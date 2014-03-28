@@ -1,10 +1,20 @@
 #!/bin/bash
-export LJHOME=/dreamhack/opt/dhroot
-wget -O $LJHOME/cvs/multicvs.conf http://hg.dwscoalition.org/dw-free/raw-file/tip/cvs/multicvs.conf
-wget -O $LJHOME/bin/cvsreport.pl http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/cvsreport.pl
-wget -O $LJHOME/bin/vcv http://hg.dwscoalition.org/dw-free/raw-file/tip/bin/vcv
-chmod ugo+x $LJHOME/bin/cvsreport.pl $LJHOME/bin/vcv
-# FIXME: We'll need to comment out the Data-ObjectDriver line, remove when bug 2463 is fixed
-#replace "SVN(Data-ObjectDriver)" "#SVN(Data-ObjectDriver)" -- $LJHOME/cvs/multicvs.conf
-$LJHOME/bin/cvsreport.pl -u
-hg -R $LJHOME/cvs/dw-free up -C null
+export LJHOME="/dreamhack/opt/dhroot"
+if [ ! -d "$LJHOME/.git" ]; then
+  echo "'$LJHOME' doesn't exist, cloning..."
+  git clone https://github.com/dreamwidth/dw-free.git "$LJHOME"   # the Daily Snapshot is never going to push anything, so no need for a username
+else
+  echo "Pulling from remote dw-free into '$LJHOME'..."
+  cd "$LJHOME"
+  git pull
+fi
+
+NONFREE="$LJHOME/ext/dw-nonfree"
+if [ ! -d "$NONFREE/.git" ]; then
+  echo "'$NONFREE' doesn't exist, cloning..."
+  git clone https://github.com/dreamwidth/dw-nonfree.git "$NONFREE"
+else
+  echo "Pulling from remote dw-nonfree into '$NONFREE'..."
+  cd "$NONFREE"
+  git pull
+fi

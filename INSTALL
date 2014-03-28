@@ -283,9 +283,12 @@ cpan Perlbal
 37. Edit /dreamhack/sbin/dh-newuser to modify the variables at the top for your
     particular installation, especially the domain.
 
-38. Create a new user with dh-newuser to test things out, using the
-    "dreamwidth" Github repos. (And where "dh-daily" appears in the below
-    steps, substitute the SSH username of the account you created.)
+38. Test the ability to create a new user by running
+    /dreamhack/lib/bin/cron/remake-daily . This creates the Daily Snapshot
+    user, 'dh-daily', which we'll use in the next few commands.  When the
+    command completes, you should be able to go to
+    http://www.daily.hack.dreamwidth.net/ and see the new Dreamwidth
+    installation, which you should test to make sure there are no errors.
 
 39. Run checkconfig.pl:
 
@@ -356,21 +359,21 @@ iptables -L
 
 chmod ugo+rwx /dreamhack/var/maintain.d
 
-48. Import the root-crontab file:
+48. Create a Dreamhack for yourself (if you plan to use one; if not, make a
+    test user) with dh-newuser. Log in and check that everything is fine.
+
+49. Import the root-crontab file:
 
 crontab /dreamhack/setup/root-crontab
 
-    (If the Daily Snapshot isn't done yet, then do 'crontab -e' afterwards and
-    comment out the remake-daily line.)
-
-49. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
+50. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
     following lines:
 
 Defaults	env_reset
 Defaults	lecture=always
 Defaults	lecture_file=/dreamhack/var/sudo-lecture
 
-50. Edit the /etc/ssh/sshd_config file to add the following line:
+51. Edit the /etc/ssh/sshd_config file to add the following line:
 
 AllowTcpForwarding no
 

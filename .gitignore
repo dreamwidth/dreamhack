@@ -3,6 +3,7 @@ backup/out
 home/[0-9]*
 local/settings.*
 opt/archive/*
+opt/dhroot
 opt/migration/*
 var/maintain.d
 !var/maintain.d/.placeholder

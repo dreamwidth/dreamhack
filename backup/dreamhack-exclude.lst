@@ -3,6 +3,7 @@
 /dreamhack/backup/out/*
 /dreamhack/home/[0-9]*
 /dreamhack/opt/archive/*
+/dreamhack/opt/dhroot
 /dreamhack/opt/migration/*
 /dreamhack/var/maintain.d/*
 /dreamhack/www/dev/coverage
