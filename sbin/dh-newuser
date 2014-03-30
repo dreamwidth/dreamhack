@@ -343,12 +343,12 @@ if [ "$COPYDHROOT" != "" ]; then
   echo copying and updating dhroot...
   # let's copy over the dhroot directory, update it, and use that instead of getting it from GitHub
   # NOTE: This won't work with anything other than the Daily Snapshot for now.
-  su -c "
-  cp -a /dreamhack/opt/dhroot $LJHOME
-  cd $LJHOME
-  git pull
-  cd $LJHOME/ext/dw-nonfree
-  git pull
+  su -lc "
+    cp -a /dreamhack/opt/dhroot $LJHOME
+    cd $LJHOME
+    git pull
+    cd $LJHOME/ext/dw-nonfree
+    git pull
 " $UNIXUSER
 else
   # clone the dw-free repo from the user's GitHub account
