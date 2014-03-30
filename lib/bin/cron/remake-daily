@@ -8,7 +8,7 @@ if [ ! -d "/dreamhack/opt/dhroot/.git" ]; then
 fi
 
 DAILYEXISTS=0
-if getent passwd dh-daily; then DAILYEXISTS=1; fi
+if getent passwd dh-daily >/dev/null; then DAILYEXISTS=1; fi
 if [ "$DAILYEXISTS" == "0" ]; then
   echo "*****"
   echo "Warning: The 'dh-daily' user does not exist!"
