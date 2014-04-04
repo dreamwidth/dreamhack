@@ -50,10 +50,14 @@ fi
 
 DELETE=0
 SENDEMAIL=1
+COPYDHROOT=0
+GHCHECK=1
 
 while [[ "$1" =~ ^-- ]]; do
-    if [ "$1" == "--delete" ];   then DELETE=1;
-  elif [ "$1" == "--no-email" ]; then SENDEMAIL=0;
+    if [ "$1" == "--delete" ];      then DELETE=1;
+  elif [ "$1" == "--no-email" ];    then SENDEMAIL=0;
+  elif [ "$1" == "--copy-dhroot" ]; then COPYDHROOT=1;
+  elif [ "$1" == "--no-gh-check" ]; then GHCHECK=0;   # this is for the Daily Snapshot so we don't make needless GitHub checks
   else
     echo "Switch '$1' not recognised"
     exit 1
@@ -191,14 +195,19 @@ if [ "$GITNAME" == "" ]; then
   ERROR=1
 else
   echo "GitHub: '$GITNAME'"
-  # check to see if this GitHub account does everything we need to, as well as getting the canonically-cased username
-  CGITNAME=$($LIBDIR/check-github-account <<IN
+  if [ "$GHCHECK" == "1" ]; then
+    # check to see if this GitHub account does everything we need to, as well as getting the canonically-cased username
+    CGITNAME=$($LIBDIR/check-github-account <<IN
 $GITNAME
 IN
 )
-  if [ "$?" -ne 0 ]; then
-    echo "GitHub account does not exist or does not have the repositories needed to continue - see above for details."
-    ERROR=1
+    if [ "$?" -ne 0 ]; then
+      echo "GitHub account does not exist or does not have the repositories needed to continue - see above for details."
+      ERROR=1
+    fi
+  else
+    echo "Skipping GitHub check."
+    CGITNAME="$GITNAME"
   fi
 fi
 
@@ -330,32 +339,45 @@ chown -R $UNIXUSER:$DHGROUP $UHOME
 echo setting rwx--x--x on home directory...
 chmod 711 $UHOME
 
-# clone the dw-free repo from the user's GitHub account
-echo cloning dw-free...
-su -lc "
-  git clone https://$CGITNAME@github.com/$CGITNAME/dw-free.git $LJHOME
-  cd $LJHOME
-
-  # and let's make it aware of the dreamwidth repository so we can grab updates later
-  git remote add dreamwidth https://github.com/dreamwidth/dw-free
-  git fetch dreamwidth
-  # we also want to sync up with the main branches
-  git branch --set-upstream develop dreamwidth/develop 
-  git branch --set-upstream master dreamwidth/master
-" $UNIXUSER
-
-if [ "$NONFREE" == "1" ]; then
-  # do the same for dw-nonfree
-  echo cloning dw-nonfree...
+if [ "$COPYDHROOT" != "" ]; then
+  echo copying and updating dhroot...
+  # let's copy over the dhroot directory, update it, and use that instead of getting it from GitHub
+  # NOTE: This won't work with anything other than the Daily Snapshot for now.
   su -lc "
-    cd $LJHOME/ext
-    git clone https://$CGITNAME@github.com/$CGITNAME/dw-nonfree.git
-    cd dw-nonfree
-    git remote add dreamwidth https://github.com/dreamwidth/dw-nonfree
+    cp -a /dreamhack/opt/dhroot $LJHOME
+    cd $LJHOME
+    git pull
+    cd $LJHOME/ext/dw-nonfree
+    git pull
+" $UNIXUSER
+else
+  # clone the dw-free repo from the user's GitHub account
+  echo cloning dw-free...
+  su -lc "
+    git clone https://$CGITNAME@github.com/$CGITNAME/dw-free.git $LJHOME
+    cd $LJHOME
+
+    # and let's make it aware of the dreamwidth repository so we can grab updates later
+    git remote add dreamwidth https://github.com/dreamwidth/dw-free
     git fetch dreamwidth
-    git branch --set-upstream develop dreamwidth/develop
+    # we also want to sync up with the main branches
+    git branch --set-upstream develop dreamwidth/develop 
     git branch --set-upstream master dreamwidth/master
   " $UNIXUSER
+
+  if [ "$NONFREE" == "1" ]; then
+    # do the same for dw-nonfree
+    echo cloning dw-nonfree...
+    su -lc "
+      cd $LJHOME/ext
+      git clone https://$CGITNAME@github.com/$CGITNAME/dw-nonfree.git
+      cd dw-nonfree
+      git remote add dreamwidth https://github.com/dreamwidth/dw-nonfree
+      git fetch dreamwidth
+      git branch --set-upstream develop dreamwidth/develop
+      git branch --set-upstream master dreamwidth/master
+    " $UNIXUSER
+  fi
 fi
 
 # put a crontab file in the user's home directory, but don't load

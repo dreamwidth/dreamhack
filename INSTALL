@@ -283,11 +283,23 @@ cpan Perlbal
 37. Edit /dreamhack/sbin/dh-newuser to modify the variables at the top for your
     particular installation, especially the domain.
 
-38. Create a new user with dh-newuser to test things out, using the
-    "dreamwidth" Github repos. (And where "dh-daily" appears in the below
-    steps, substitute the SSH username of the account you created.)
+38. Update the local copy of the Dreamwidth repositories:
 
-39. Run checkconfig.pl:
+/dreamhack/lib/bin/cron/update-skel
+
+    This copy of the repositories is used as a cache by the remake-daily
+    command to prevent needless calls to GitHub.
+
+39. Test the ability to create a new user by running the remake-daily command:
+
+/dreamhack/lib/bin/cron/remake-daily
+
+    This creates the Daily Snapshot user, 'dh-daily', which we'll use in the
+    next few commands.  When the command completes, you should be able to go to
+    http://www.daily.hack.dreamwidth.net/ and see the new Dreamwidth
+    installation, which you should test to make sure there are no errors.
+
+40. Run checkconfig.pl:
 
 su - dh-daily
 cd $LJHOME
@@ -295,7 +307,7 @@ bin/checkconfig.pl
 
     Install any modules which it needs, whether required or optional.
 
-40. Run the test suite:
+41. Run the test suite:
 
 su - dh-daily
 cd $LJHOME
@@ -306,13 +318,13 @@ prove t/*.t
     t/directorysearch-extra.t, t/directorysearch.t, t/parsefeed-atom-types.t,
     t/poll.t, t/usermoves.t)
 
-41. Install memcached, but make sure it doesn't run by default:
+42. Install memcached, but make sure it doesn't run by default:
 
 apt-get install memcached
 /etc/init.d/memcached stop
 update-rc.d -f memcached remove
 
-42. Install more packages:
+43. Install more packages:
 
 # Miscellaneous must-haves
 apt-get install acct emacs joe mc mutt finger info openssh-blacklist openssl-blacklist perl-doc perltidy tcsh tofrodos traceroute zsh
@@ -326,15 +338,15 @@ apt-get install libperl-critic-perl libpod-coverage-perl libtest-pod-coverage-pe
 # Allow people to generate the (extremely old, LJ-based) documentation:
 apt-get install docbook-xml docbook-xsl xsltproc
 
-43. joe (installed above) sets itself as the default editor, so change it back to nano:
+44. joe (installed above) sets itself as the default editor, so change it back to nano:
 
 update-alternatives --config editor
 
-44. Copy the motd.tail file to /etc/motd.tail:
+45. Copy the motd.tail file to /etc/motd.tail:
 
 cp /dreamhack/setup/motd.tail /etc/motd.tail
 
-45. Move the extra MOTD information out of the way so that users don't see it:
+46. Move the extra MOTD information out of the way so that users don't see it:
 
 mkdir /etc/update-motd.d-old
 cd /etc/update-motd.d
@@ -342,7 +354,7 @@ ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
 
     Make sure to leave 99-footer as it's the file that prints motd.tail.
 
-46. Reboot the server so that the MOTD is regenerated. Check that perlbal and
+47. Reboot the server so that the MOTD is regenerated. Check that perlbal and
     Apache still come back up after the reboot. (The Dreamhack you created
     won't, but that's fine; individual Dreamhacks don't get started back up.)
 
@@ -351,26 +363,26 @@ ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
 iptables -t nat -L
 iptables -L
 
-47. Fix the permissions on /dreamhack/var/maintain.d so that everybody can
+48. Fix the permissions on /dreamhack/var/maintain.d so that everybody can
     write to it:
 
 chmod ugo+rwx /dreamhack/var/maintain.d
 
-48. Import the root-crontab file:
+49. Create a Dreamhack for yourself (if you plan to use one; if not, make a
+    test user) with dh-newuser. Log in and check that everything is fine.
+
+50. Import the root-crontab file:
 
 crontab /dreamhack/setup/root-crontab
 
-    (If the Daily Snapshot isn't done yet, then do 'crontab -e' afterwards and
-    comment out the remake-daily line.)
-
-49. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
+51. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
     following lines:
 
 Defaults	env_reset
 Defaults	lecture=always
 Defaults	lecture_file=/dreamhack/var/sudo-lecture
 
-50. Edit the /etc/ssh/sshd_config file to add the following line:
+52. Edit the /etc/ssh/sshd_config file to add the following line:
 
 AllowTcpForwarding no
 

@@ -1,11 +1,30 @@
 #!/bin/bash
 export PATH=$PATH:/sbin:/usr/sbin
-ps u -u dh-daily   # a way to see if the previous one worked
-echo "Stopping Apache... (ignore the error you get first thing in the delete-user process)"
-su -lc "stop-apache" dh-daily
-skill -KILL -u dh-daily
-/dreamhack/sbin/dh-deluser daily 7000
-/dreamhack/sbin/dh-newuser daily 7000 mark@dreamwidth.org "Daily Snapshot" - - 1
+
+if [ ! -d "/dreamhack/opt/dhroot/.git" ]; then
+  echo "The /dreamhack/opt/dhroot directory does not exist or is not a Git repository."
+  echo "You will need to run /dreamhack/lib/bin/cron/update-skel before running this command."
+  exit 1
+fi
+
+DAILYEXISTS=0
+if getent passwd dh-daily >/dev/null; then DAILYEXISTS=1; fi
+if [ "$DAILYEXISTS" == "0" ]; then
+  echo "*****"
+  echo "Warning: The 'dh-daily' user does not exist!"
+  echo "If this is your first time creating the dh-daily user, this is expected. Otherwise, it may indicate that an error occurred on the last run."
+  echo "Since 'dh-daily' doesn't exist yet, I'll skip the deletion commands."
+  echo "*****"
+  echo
+else
+  ps u -u dh-daily   # a way to see if the previous one worked
+  echo "Stopping Apache... (ignore the error you get first thing in the delete-user process)"
+  su -lc "stop-apache" dh-daily
+  skill -KILL -u dh-daily
+  /dreamhack/sbin/dh-deluser daily 7000
+fi
+
+/dreamhack/sbin/dh-newuser --copy-dhroot --no-email --no-gh-check daily 7000 dreamhack-daily@theblob.org "Daily Snapshot" dreamwidth - -
 if [ -f ~dh-daily/dw/etc/config.pl ]; then
   replace '$USE_ACCT_CODES = 1;' '$USE_ACCT_CODES = 0;' -- ~dh-daily/dw/etc/config.pl
 else
