@@ -19,16 +19,46 @@ if (!defined($fromdate) || ($fromdate eq "")) {
 <script type="text/javascript" src="jquery.datepick.min.js"></script>
 <script type="text/javascript">
 \$(function() {
-  \$('#popupDatePickerFrom').datepick({dateFormat: 'yyyy-mm-dd', firstDay: 1});
-  \$('#popupDatePickerTo').datepick({dateFormat: 'yyyy-mm-dd', firstDay: 1});
+  function selectCustom() {
+    \$('#dates-custom').attr('checked', true);
+  }
+  \$('#popupDatePickerFrom').datepick({dateFormat: 'yyyy-mm-dd', firstDay: 1, onSelect: selectCustom});
+  \$('#popupDatePickerTo').datepick(  {dateFormat: 'yyyy-mm-dd', firstDay: 1, onSelect: selectCustom});
+
+  \$('#popupDatePickerFrom, #popupDatePickerTo').change(selectCustom);
 });
 </script>
+<style type="text/css">
+  body {
+    font-family: 'Arial', sans-serif;
+  }
+
+  #calImg {
+    display: none;
+  }
+
+  .datepick-trigger {
+    vertical-align: middle;
+  }
+
+  input.date {
+    border: 1px solid black;
+    margin-top: 5px;
+    margin-right: 1px;
+    padding: 2px;
+  }
+</style>
 </head>
 <body>
+<h1>Code Tour Generator</h1>
 <form method="get" action="index.cgi">
-<p>What dates should the code tour cover? (YYYY-MM-DD format, please; click text boxes for date pickers; end date is optional and can be left blank if you don't want an end date):<br>
-<input type="text" name="fromdate" id="popupDatePickerFrom"> to <input type="text" name="todate" id="popupDatePickerTo"><br>
-<input type="checkbox" name="blankdesc" value="1" id="blankdesc"> <label for="blankdesc">Leave 'description' blank instead of using "FILL IN".<label></p>
+<p>What dates should the code tour cover?</p>
+<input type="radio" name="dates" value="fromlasttonow" id="dates-fromlasttonow" checked="true"> <label for="dates-fromlasttonow">From the end of the last code tour (according to GitHub) to now</label><br>
+<input type="radio" name="dates" value="custom" id="dates-custom"> <label for="dates-custom">Between these dates:<br><small>(YYYY-MM-DD format, please; click text boxes for date pickers; end date is optional and can be left blank if you don't want an end date.)</small></label><br>
+<div id="customDates">
+<input type="text" class="date" name="fromdate" id="popupDatePickerFrom"> to <input type="text" class="date" name="todate" placeholder="Now" id="popupDatePickerTo"><br><br>
+</div>
+<input type="checkbox" name="blankdesc" value="1" id="blankdesc"> <label for="blankdesc">Leave 'description' blank instead of using "FILL IN".</label></p>
 <p><input type="submit" value="Generate"></p>
 </form>
 <p>This script was inspired by, and draws from, <span lj:user='foxfirefey' style='white-space: nowrap;'><a href='http://foxfirefey.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://foxfirefey.dreamwidth.org/'><b>foxfirefey</b></a></span>'s Python code tour generator.</p>
