@@ -3,6 +3,7 @@
 use File::Temp qw(tempfile);
 use Passwd::Unix qw(passwd gecos home uid gid);
 use Mail::Send;
+use IPC::Run3;
 
 my $lockfile = "/dreamhack/var/lock/maintain-dreamhacks.pid";
 if (-f $lockfile) {
@@ -92,19 +93,11 @@ sub cmdReinstall {
   my @output = ();
   my @newcommands = ();
 
-  # temporary until we can do time for the reinstaller to work
-  return makeError($username, "Temporary early exit from reinstall", "The automatic reinstaller has been temporarily disabled.", <<MESSAGE);
-The reinstaller has not yet been updated to cope with the new Git-based
-install system - sorry! In the meantime, you can contact Sophie at
-<sophie\@hack.dreamwidth.net\> if you wish to do a reinstall. (It doesn't take
-much of her time, don't worry.)
-MESSAGE
-
   ### ====================== ###
 
   if ($args[0] && $args[0] eq "--immediate") {
     my $reqtime = $args[1];
-    if (time() - $reqtime < 60) {
+    if (time() - $reqtime < 120) {
       # keep this command for next time
       push(@newcommands, "$command " . join(" ", @args));
     }
@@ -149,8 +142,8 @@ MESSAGE
 
       # grab some more information from the database that we need to keep
       # before deleting the user entirely
-      require '/dreamhack/lib/dreamhacks-db-readonly.pl';
-      my $sth = $dbh->prepare("SELECT `username`, `email`, `preferred_name`, `lj_username`, `dw_username`, `irc_nick` FROM users WHERE `ssh_username` = ?");
+      require '/dreamhack/lib/dreamhacks-db.pl';   # we need the read-write version for access to email addresses
+      my $sth = $dbh->prepare("SELECT `username`, `email`, `preferred_name`, `github_username`, `lj_username`, `dw_username`, `irc_nick` FROM `users` LEFT OUTER JOIN `user_emails` USING (`username`) WHERE `ssh_username` = ?");
       $sth->execute($username);
       my $error = 0;
       if (my $hash = $sth->fetchrow_hashref()) {
@@ -178,6 +171,10 @@ changed. Please contact Sophie <sophie\@hack.dreamwidth.net> and ask for
 a manual delete/reinstall.
 MESSAGE
       }
+
+      # do a check on the GitHub username (this will also catch if the username is undef)
+      my ($error, $canongitname) = doGitHubCheckAndUserErrors($username, $userinfo->{'github_username'}, 0);
+      if (defined $error) { return $error; }
 
       # we know we can rebuild now, so kill with extreme prejudice
       # first, stop them from logging in again:
@@ -211,13 +208,16 @@ MESSAGE
       print Dumper($userinfo);
       my $ljuser = $userinfo->{'lj_username'};
       my $dwuser = $userinfo->{'dw_username'};
-      my @args = ($userinfo->{'username'},
-                  (@{$userinfo->{'ports'}})[0],
-                  $userinfo->{'email'},
-                  $userinfo->{'preferred_name'},
-                  (defined($ljuser) ? $ljuser : "-"),
-                  (defined($dwuser) ? $dwuser : "-"),
-                  "1");   # don't automatically email or start up yet
+      my @args = (
+                   "--no-email", "--no-gh-check",   # we did the GitHub check earlier, no need to do it again
+                   $userinfo->{'username'},
+                   (@{$userinfo->{'ports'}})[0],
+                   $userinfo->{'email'},
+                   $userinfo->{'preferred_name'},
+                   $canongitname,
+                   (defined($ljuser) ? $ljuser : "-"),
+                   (defined($dwuser) ? $dwuser : "-"),
+                 );
       print "Executing dh-newuser with args: ('" . join("', '", @args) . "')\n";
       my $errcode = system('/dreamhack/sbin/dh-newuser', @args);   # we use the multi-argument form of system() here to prevent injection attacks
       if ($errcode) {
@@ -236,8 +236,12 @@ MESSAGE
       # put their authorized_keys file back if they had one
       if (defined($authkeys)) {
         my $userhome = home($username);   # get the new home, just in case it changed
-        my $authkeysfile = "$userhome/.ssh/authorized_keys";   # ditto
+        my $sshdir = "$userhome/.ssh";
+        my $authkeysfile = "$sshdir/authorized_keys";   # ditto
+
+        mkdir($sshdir, 0700);   # the skel doesn't contain a .ssh by default
         rename($authkeys, $authkeysfile);
+        chown(uid($username), gid($username), $sshdir);
         chown(uid($username), gid($username), $authkeysfile);
       }
 
@@ -260,7 +264,7 @@ start-apache");
 
       # get their MySQL password for inclusion in the email
       my $privpass = undef;
-      my $privfile = "$homedir/dw/etc/config-private.pl";
+      my $privfile = "$homedir/dw/ext/local/etc/config-private.pl";
       if (-f $privfile) {
         open(PRIVATE, "<:encoding(ascii)", $privfile);
         while (<PRIVATE>) {
@@ -273,7 +277,8 @@ start-apache");
       my $privpara = <<PARA;
 Unfortunately, this script couldn't work out what your new database password
 is, possibly due to a change in the style of the configuration files. You
-should be able to find it yourself in the dw/etc/config-private.pl file, though.
+should be able to find it yourself in the ext/local/etc/config-private.pl file,
+though.
 PARA
       if (defined($privpass)) {
         $privpara = <<PARA;
@@ -299,8 +304,8 @@ http://www.$domain/$notes
 
 Your SSH password is the same as it was before the rebuild, so you should be
 able to log in with the same credentials. The database password has changed,
-however, so you should take note of the new value in your etc/config-private.pl
-file in case you need it.
+however, so you should take note of the new value in your
+ext/local/etc/config-private.pl file in case you need it.
 
 If you had one, your ~/.ssh/authorized_keys file has also been retained.
 
@@ -316,14 +321,33 @@ MESSAGE
     }
   }
   else {
+    # let's do a quick check on the GitHub username so that the user doesn't need to wait two minutes before being told it won't work
+
+    require '/dreamhack/lib/dreamhacks-db-readonly.pl';
+    my $sth = $dbh->prepare("SELECT `github_username` FROM `users` WHERE `ssh_username` = ?");
+    $sth->execute($username);
+    if ($sth->rows != 1) {
+      return makeError($username, "Error when getting github_username from database: sth->rows != 1", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+An error occurred while trying to get your GitHub username from the database.
+Please let Sophie know about this by emailing <sophie\@hack.dreamwidth.net>.
+Thank you.
+MESSAGE
+    }
+    my ($ghname) = $sth->fetchrow_array();
+
+    # do a check on the GitHub username (this will also catch if the username is undef)
+    my ($error, $canongitname) = doGitHubCheckAndUserErrors($username, $ghname, 1);
+    if (defined $error) { return $error; }
+
     push(@newcommands, "reinstall --immediate " . time());
     open(PIPE, "|/usr/bin/write $username");
     print PIPE <<MESSAGE;
 [this is an automatic message]
 
-A request to reinstall your Dreamhack has been received.
+A request to reinstall your Dreamhack has been received. Please read this
+message carefully, as it contains important information.
 
-Within the next 60 seconds, you can cancel this request with the following
+Within the next 120 seconds, you can cancel this request with the following
 command:
 
 rm $filename
@@ -335,14 +359,121 @@ be deleted and reinstalled as if for a new user. Your password (and your
 an email once the reinstall is complete, which will take about 2-3 minutes.
 Your Apache instance will also be automatically started.
 
-If you have any data you need to backup, please CANCEL this request and do so
-now; the reinstall process will wipe your entire home directory.
+The reinstall process will clone the repositories from your own GitHub account,
+so any changes that you've pushed to GitHub will be preserved. If you wish to
+start completely from scratch, you will need to cancel this request with the
+command above, delete your "dw-free" and "dw-nonfree" repositories from GitHub,
+and then re-fork them. Then, start the reinstallation process again.
+
+If you have any data you need to backup that has not been pushed to GitHub
+(including work-in-progress branches or configuration files in your home
+directory), please CANCEL this request and back your data up now; the reinstall
+process will wipe your entire home directory.
 MESSAGE
     close(PIPE);
     push(@output, "Queued reinstall for $username.");
   }
   my $output = join("\n", @output);
   return ($output, \@newcommands);
+}
+
+sub doGitHubCheckAndUserErrors {
+  my ($username, $ghname, $pretest) = @_;
+  my $premessage = "";
+  if ($pretest == 1) {
+    $premessage = <<PRE;
+A request was received to reinstall your Dreamhack, but in the process of
+making sure your Dreamhack was able to be rebuilt, an issue was encountered:
+
+PRE
+  }
+  if (!defined $ghname) {
+    return makeError($username, "Error occurred, no GitHub username in database: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+${premessage}Your Dreamhack could not be rebuilt because the automatic reinstaller does not
+know your GitHub username.
+
+You probably got this message because you've had a Dreamhack prior to the move
+to GitHub and thus have no GitHub information in the database. Please update
+the database by running the following command on the Dreamhack server:
+
+/dreamhack/bin/edit-dreamhack-info
+
+Edit the 'github_username' field so that it contains your GitHub username, and
+then save and exit. Wait 1-2 minutes for the update to be processed, and then
+try reinstalling again. If the problem persists, please contact Sophie at
+<sophie\@hack.dreamwidth.net> and let her know - thank you.
+MESSAGE
+  }
+  # check the GitHub account for the dw-free and dw-nonfree repos
+  my ($result, $canongitname) = checkGitHub($ghname);
+  if ($result == 1) {
+    return makeError($username, "Error occurred while checking GitHub account: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+${premessage}Your Dreamhack could not be rebuilt because there was a problem checking your
+GitHub account. Please run the following command on the Dreamhack server and
+check that the value of 'github_username' is correct, and edit it if needed:
+
+/dreamhack/bin/edit-dreamhack-info
+
+If the GitHub username is correct, there may have been an error communicating
+with GitHub - please try again in a few minutes. If the problem persists,
+please contact Sophie at <sophie\@hack.dreamwidth.net> and let her know - thank
+you.
+MESSAGE
+  }
+  elsif ($result == 2) {
+    return makeError($username, "Error occurred while checking GitHub repository existence: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+${premessage}Your Dreamhack could not be rebuilt because there was a problem checking your
+GitHub account '$ghname' for the 'dw-free' and 'dw-nonfree' repositories. If your
+GitHub username is not '$ghname', please run the following command on the
+Dreamhack server to correct it:
+
+/dreamhack/bin/edit-dreamhack-info
+
+If you have forked the 'dw-free' and 'dw-nonfree' repositories on your GitHub
+account and this GitHub username is correct, there may have been an error
+communicating with GitHub - please try again in a few minutes. If the problem
+persists, please contact Sophie at <sophie\@hack.dreamwidth.net> and let her
+know - thank you.
+MESSAGE
+  }
+  elsif ($result == 3) {
+    return makeError($username, "Error occurred while checking GitHub repository ownership: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+${premessage}Your Dreamhack could not be rebuilt because there was a problem checking your
+GitHub account '$ghname' for the 'dw-free' and 'dw-nonfree' repositories. You
+need to fork the repositories onto your account, otherwise you will not be able
+to push your changes own repositories.  After you have done so, try the
+reinstallation process again. If the problem persists, please contact Sophie at
+<sophie\@hack.dreamwidth.net> and let her know - thank you.
+MESSAGE
+  }
+  elsif ($result == -1) {
+    return makeError($username, "Unknown error occurred while running check-github-account: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
+${premessage}Your Dreamhack could not be rebuilt because there was a unknown error while
+checking your GitHub account. Don't worry, it's not your fault! Your account
+has not been changed.
+
+An error report has been sent to Sophie, who may contact you to try to work out
+what went wrong. In the meantime, if you want, you may request a manual
+reinstall by contacting Sophie at <sophie\@hack.dreamwidth.net>.
+MESSAGE
+  }
+  else {
+    return (undef, $canongitname);
+  }
+}
+
+sub checkGitHub {
+  my ($githubname) = @_;
+  my $stdout;
+  my $error;
+  eval {
+    run3(["$libbin/check-github-account"], \$githubname, \$stdout, undef);   # inherit stderr from us so it appears in the cron output
+    $error = $? >> 8;
+  };
+  if ($@) {
+    $error = -1;   # run3 made a boo-boo.
+  }
+  return ($error, $stdout);   # $stdout is the canonical username if $error == 0, undefined (though not necessarily undef) otherwise
 }
 
 sub cmdEditDreamhackInfo {
