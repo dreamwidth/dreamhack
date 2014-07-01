@@ -331,7 +331,7 @@ apt-get install acct emacs joe mc mutt finger info openssh-blacklist openssl-bla
 # To allow spell-checking on the Dreamhacks
 apt-get install aspell
 # Perl modules for the aux Dreamhack scripts:
-apt-get install libquota-perl libfile-temp-perl libpasswd-unix-perl libtext-csv-perl
+apt-get install libquota-perl libfile-temp-perl libpasswd-unix-perl libtext-csv-perl libipc-run3-perl
 cpan Text::CSV::Slurp
 # Modules that some people on the server use for automated testing/formatting:
 apt-get install libperl-critic-perl libpod-coverage-perl libtest-pod-coverage-perl
