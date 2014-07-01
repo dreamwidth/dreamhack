@@ -97,7 +97,7 @@ sub cmdReinstall {
 
   if ($args[0] && $args[0] eq "--immediate") {
     my $reqtime = $args[1];
-    if (time() - $reqtime < 120) {
+    if (time() - $reqtime < 115) {
       # keep this command for next time
       push(@newcommands, "$command " . join(" ", @args));
     }
