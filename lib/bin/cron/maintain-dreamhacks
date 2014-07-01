@@ -357,7 +357,7 @@ If the reinstall continues, you will be logged out and your account will be
 completely rebuilt from scratch - that is, your account and home directory will
 be deleted and reinstalled as if for a new user. Your password (and your
 ~/.ssh/authorized_keys file, if any) will be copied over, and you will receive
-an email once the reinstall is complete, which will take about 2-3 minutes.
+an email once the reinstall is complete, which will take about 5-10 minutes.
 Your Apache instance will also be automatically started.
 
 The reinstall process will clone the repositories from your own GitHub account,
