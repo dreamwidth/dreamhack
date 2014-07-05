@@ -363,6 +363,14 @@ else
     # we also want to sync up with the main branches
     git branch --set-upstream develop dreamwidth/develop 
     git branch --set-upstream master dreamwidth/master
+
+    # now map the other remote branches from our *own* repository to local branches
+    REMOTEBRANCHES=\$(git branch -a | perl -ne 'if (/^  remotes\\/origin\\/([^ ]+)$/) { print \$1 }')
+    for branch in \$REMOTEBRANCHES; do
+      if [[ \"\$branch\" != \"develop\" && \"\$branch\" != \"master\" ]]; then
+        git branch \"\$branch\" origin/\"\$branch\"
+      fi
+    done
   " $UNIXUSER
 
   if [ "$NONFREE" == "1" ]; then
@@ -376,6 +384,14 @@ else
       git fetch dreamwidth
       git branch --set-upstream develop dreamwidth/develop
       git branch --set-upstream master dreamwidth/master
+
+      # now map the other remote branches from our *own* repository to local branches
+      REMOTEBRANCHES=\$(git branch -a | perl -ne 'if (/^  remotes\\/origin\\/([^ ]+)$/) { print \$1 }')
+      for branch in \$REMOTEBRANCHES; do
+        if [[ \"\$branch\" != \"develop\" && \"\$branch\" != \"master\" ]]; then
+          git branch \"\$branch\" origin/\"\$branch\"
+        fi
+      done
     " $UNIXUSER
   fi
 fi
