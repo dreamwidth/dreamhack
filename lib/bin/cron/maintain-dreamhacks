@@ -27,6 +27,7 @@ my @files = readdir(DIR);
 closedir(DIR);
 
 foreach my $file (@files) {
+  next if ($file eq ".placeholder");   # it's okay to have this around, and it stops git from messing up permissions
   my $full = "$maintaindir/$file";
   next if (!(-f $full));
   my ($uid, $gid) = (stat($full))[4, 5];
