@@ -202,8 +202,8 @@ mysql -uroot -p dreamhacks < /dreamhack/setup/dreamhacks-schema.sql
     you created earlier before running these commands)
 
 GRANT SELECT, INSERT, UPDATE, DELETE, LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks'@'localhost' IDENTIFIED BY 'readwrite_password_above';
-GRANT SELECT, INSERT ON `dreamhacks`.`users` TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
-GRANT SELECT, INSERT ON `dreamhacks`.`userports` TO 'dreamhacks_ro'@'localhost';
+GRANT SELECT ON `dreamhacks`.`users` TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
+GRANT SELECT ON `dreamhacks`.`userports` TO 'dreamhacks_ro'@'localhost';
 GRANT LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks_ro'@'localhost';
 
 25. Copy the settings files and secure them appropriately:
