@@ -209,12 +209,14 @@ GRANT LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks_ro'@'localhost';
 25. Copy the settings files and secure them appropriately:
 
 cp /dreamhack/local/samples/settings.nonroot.sample /dreamhack/local/settings.nonroot
+cp /dreamhack/local/samples/settings.shared.sample /dreamhack/local/settings.shared
 cp /dreamhack/local/samples/settings.root.sample /dreamhack/local/settings.root
 chmod 600 /dreamhack/local/settings.root
 
-26. Edit the newly-created config files at /dreamhack/local/settings.root and
-    /dreamhack/local/settings.nonroot with your favourite editor to include the
-    various passwords created in the previous steps.
+26. Edit the newly-created config files in /dreamhack/local/ with your
+    favourite editor to include the various passwords created in the previous
+    steps. While you're at it, change settings.shared so that the details for
+    this installation are correct.
 
 27. Install Mercurial and Subversion:
 

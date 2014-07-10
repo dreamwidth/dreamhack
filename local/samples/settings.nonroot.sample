@@ -2,5 +2,7 @@
 # It is designed to be directly parsable with bash, and a Perl helper is included in the helpers/ directory
 # Copy this file to /dreamhack/local/settings.nonroot and make sure nonroot users can access it before making any changes
 
+source /dreamhack/local/settings.shared
+
 dh_db_readonly_username="dreamhacks_ro"
 dh_db_readonly_password="example"

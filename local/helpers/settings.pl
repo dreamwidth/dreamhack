@@ -6,7 +6,9 @@
 sub dh_settings {
   my ($type) = @_;
   if ($type ne "nonroot" && $type ne "root") { die "Can only load nonroot/root settings"; }
-  return dh_load_settings_file("/dreamhack/local/settings.$type");
+  my $shared = dh_load_settings_file("/dreamhack/local/settings.shared");
+  my $specific = dh_load_settings_file("/dreamhack/local/settings.$type");
+  return {%{$shared}, %{$specific}};
 }
 
 sub dh_load_settings_file {
@@ -21,6 +23,7 @@ sub dh_load_settings_file {
     next if ($line eq "");
 
     my ($name, @value) = split(/=/, $line);
+    next if (@value == 0);     # ignore anything that's not a setting
     my $value = join("=", @value);
     $value=~s/^"|"$//g;        # remove any quoting that might be surrounding the value
     $settings{$name} = $value;
