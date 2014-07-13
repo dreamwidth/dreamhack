@@ -202,19 +202,21 @@ mysql -uroot -p dreamhacks < /dreamhack/setup/dreamhacks-schema.sql
     you created earlier before running these commands)
 
 GRANT SELECT, INSERT, UPDATE, DELETE, LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks'@'localhost' IDENTIFIED BY 'readwrite_password_above';
-GRANT SELECT, INSERT ON `dreamhacks`.`users` TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
-GRANT SELECT, INSERT ON `dreamhacks`.`userports` TO 'dreamhacks_ro'@'localhost';
+GRANT SELECT ON `dreamhacks`.`users` TO 'dreamhacks_ro'@'localhost' IDENTIFIED BY 'readonly_password_above';
+GRANT SELECT ON `dreamhacks`.`userports` TO 'dreamhacks_ro'@'localhost';
 GRANT LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks_ro'@'localhost';
 
 25. Copy the settings files and secure them appropriately:
 
 cp /dreamhack/local/samples/settings.nonroot.sample /dreamhack/local/settings.nonroot
+cp /dreamhack/local/samples/settings.shared.sample /dreamhack/local/settings.shared
 cp /dreamhack/local/samples/settings.root.sample /dreamhack/local/settings.root
 chmod 600 /dreamhack/local/settings.root
 
-26. Edit the newly-created config files at /dreamhack/local/settings.root and
-    /dreamhack/local/settings.nonroot with your favourite editor to include the
-    various passwords created in the previous steps.
+26. Edit the newly-created config files in /dreamhack/local/ with your
+    favourite editor to include the various passwords created in the previous
+    steps. While you're at it, change settings.shared so that the details for
+    this installation are correct.
 
 27. Install Mercurial and Subversion:
 

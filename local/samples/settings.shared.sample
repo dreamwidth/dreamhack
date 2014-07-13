@@ -1,0 +1,11 @@
+# This is a sample settings.shared file
+# It is designed to be directly parsable with bash, and a Perl helper is included in the helpers/ directory
+# Copy this file to /dreamhack/local/settings.shared and make sure nonroot users can access it before making any changes
+
+dh_service_name="Dreamhack"
+
+dh_domain="hack.dreamwidth.net"
+dh_domain_ssh="hack.dreamwidth.net"
+
+dh_from_email_address="dreamhack@example.com"
+dh_maintainer="The Dreamhack Maintainer"

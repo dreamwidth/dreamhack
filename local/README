@@ -1,12 +1,44 @@
-The settings.root and settings.nonroot files handle a few settings, notably
-those for connecting to the database. Copy over the sample files in samples/
-(renaming them so that they don't have the ".sample" extension), chmod/chown
-the settings.root file so that it can only be read by root, and fill in the
-credentials of the database users (one for the root MySQL user, one with
-read-write access, and the other with read-only access). You'll need both files
-for the various scripts.
+The directory contains local settings files that will be different for each dev
+machine that has been set up to be a Dreamhack server.
+
+Copy over the sample file in samples/ (renaming them so that they don't have
+the ".sample" extension) and chmod/chown the settings.root file so that it can
+only be read by root:
 
     cp samples/settings.root settings.root
     cp samples/settings.nonroot settings.nonroot
+    cp samples/settings.shared settings.shared
     chown root:root settings.root
     chmod 0600 settings.root
+
+The settings.shared file contains settings that will typically be different for
+every deployment. The settings are fairly self-explanatory; make sure that
+they're correct for your deployment.
+
+The settings.root and setting.nonroot files should contain the credentials for
+three database users:
+
+* root: This is necessary information because the ability to create/drop
+        databases and users, and grant privileges to users, is inherently
+        required in the process of creating new Dreamhacks. You can set up
+        another user with the necessary privileges to do this if you want, but
+        when you have the power to drop whole databases and grant privileges,
+        you may as well just use root.
+
+        These credentials are controlled by the "dh_db_root_username" and
+        "dh_db_root_password" settings in settings.root.
+
+* dreamhacks: This user should have read-write access (SELECT, INSERT, UPDATE,
+              DELETE, LOCK TABLES) to all tables of the "dreamhacks" database.
+
+              These credentials are controlled by the
+              "dh_db_readwrite_username" and "dh_db_readwrite_password"
+              settings in settings.root.
+
+* dreamhacks_ro: This user should have read-only access (SELECT only) to the
+                 "users" and "userports" tables of the "dreamhacks" database.
+                 It should not have any access to the "user_emails" table.
+
+                 These credentials are controlled by the
+                 "dh_db_readonly_username" and "dh_db_readonly_password"
+                 settings in settings.nonroot.

@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# variables to tweak
-DHNAME="Dreamhack"				# the name of the service
+# localised settings
+source /dreamhack/local/settings.root
 
-DOMAIN="hack.dreamwidth.net"			# the domain that should be used in the URL
-SSHDOMAIN="hack.dreamwidth.net"			# the domain of the SSH server. If empty, this is the same as $DOMAIN.
+# variables to tweak
+DHNAME="$dh_service_name"				# the name of the service
+
+DOMAIN="$dh_domain"			# the domain that should be used in the URL
+SSHDOMAIN="$dh_domain_ssh"			# the domain of the SSH server. If empty, this is the same as $DOMAIN.
 LISTENIP="127.0.0.1"				# the IP to listen on
 
 BASEDIR="/dreamhack"				# base directory for Dreamhack stuff
@@ -21,15 +24,14 @@ USERSHELL="/bin/bash"				# the shell the created user should get
 USERHARDQUOTA=512000				# the hard quota that should be given, in blocks.
 						# (needs kernel and filesystem quota support; use 0 to disable)
 
-source /dreamhack/local/settings.root
 MYSQLUSER="$dh_db_root_username"		# a MySQL user that has permission to create users and databases
 MYSQLPASSWORD="$dh_db_root_password"
 DBPREFIX="dreamhack"				# the prefix for the database name
 						# database user prefixes are controlled by USERPREFIX, above.
 
 # mail settings
-MAILFROM="sophie@hack.dreamwidth.net"		# the address that the auto-generated email should come from
-MAILFROMNAME="Sophie"				# the name that is used in the From field
+MAILFROM="$dh_from_email_address"		# the address that the auto-generated email should come from
+MAILFROMNAME="$dh_maintainer"				# the name that is used in the From field
 MAILSUBJECT="Your $DHNAME has been created"	# the subject line of the email.
 
 DHVERSION="5"					# the version of Dreamhacks we're creating
