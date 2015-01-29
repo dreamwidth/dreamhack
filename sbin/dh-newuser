@@ -60,6 +60,7 @@ while [[ "$1" =~ ^-- ]]; do
   elif [ "$1" == "--no-email" ];    then SENDEMAIL=0;
   elif [ "$1" == "--copy-dhroot" ]; then COPYDHROOT=1;
   elif [ "$1" == "--no-gh-check" ]; then GHCHECK=0;   # this is for the Daily Snapshot so we don't make needless GitHub checks
+  elif [ "$1" == "--no-nonfree" ];  then NONFREE=0;
   else
     echo "Switch '$1' not recognised"
     exit 1
