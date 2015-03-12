@@ -16,7 +16,7 @@ my $fromdate = param("fromdate");
 my $todate = param("todate");
 
 my $git = '/usr/bin/git --git-dir="/dreamhack/opt/dhroot/.git" --work-tree="/dreamhack/opt/dhroot"';
-my $refreshdate = `$git show -s --pretty=format:"%ci" develop`;
+my ($refreshcommit, $refreshdate) = split(/,/, `$git show -s --pretty=format:"%H,%ci" develop`);
 my $codetourrev = `$git rev-parse code-tour`;
 my @revs = split(/\n/, `$git log --first-parent --pretty=format:"%H" $codetourrev^..develop`);
 # check to see that $codetourrev is the last rev in @revs; if not, that means the 'code-tour' tag isn't on a 'develop' merge and things might be a bit weird.
@@ -84,7 +84,7 @@ if (!defined $dates) {
 </div>
 <p><input type="submit" value="Generate"></p>
 </form>
-<p><small>The default value of the 'from' date is determined by the '<b>code-tour</b>' tag in the local dw-free repository, which is refreshed weekly; it was last refreshed at $refreshdate</b>.</small></p>
+<p><small>The default value of the 'from' date is determined by the '<b>code-tour</b>' tag in the local dw-free repository, which is refreshed weekly; the date of the last commit on 'develop' according to this repository is <a href="https://github.com/dreamwidth/dw-free/commit/$refreshcommit">$refreshdate</a>.</small></p>
 <p>This script uses <span style='white-space: nowrap;'><a href='http://afuna.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://afuna.dreamwidth.org/'><b>afuna</b></a></span>'s code tour generator, programmed in Python.</p>
 </body>
 </html>
