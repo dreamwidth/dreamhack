@@ -40,7 +40,7 @@ def fetch_issues(since_input):
 
     return issues
 
-def extract_data(raw_data):
+def extract_data(raw_data, date_end):
     """Extracts the values that we need from the raw data and returns a list.
        Each item contain: 'category', 'assignee', 'pr_url', 'issue_url', 'title'
        Also merges pull request data into its associated issue data
@@ -49,6 +49,9 @@ def extract_data(raw_data):
     # list of (issue, pull_request, nonfree_pull_request) data
     grouped_issues = defaultdict(dict)
     for item in raw_data:
+        update_date = item["updated_at"][0:10]
+        if update_date > date_end:
+                continue
         issue_number = str(item["number"])
 
         title = item["title"]
@@ -136,5 +139,5 @@ def print_codetour(issues):
 
 
 if __name__ == '__main__':
-    codetour_issues = extract_data(fetch_issues("2015-03-01"))
+    codetour_issues = extract_data(fetch_issues("2015-03-01"), "2015-03-03")
     print_codetour(codetour_issues)
