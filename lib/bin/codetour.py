@@ -52,7 +52,7 @@ def extract_data(raw_data, date_end):
     grouped_issues = defaultdict(dict)
     for item in raw_data:
         update_date = item["updated_at"][0:10]
-        if update_date > date_end:
+        if date_end != "" and update_date > date_end:
                 continue
         issue_number = str(item["number"])
 
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                 sys.stderr.write('Invalid \'to\' date!\n')
                 sys.exit(1)
     else:
-        to_date = datetime.now().strftime("%Y-%m-%d")
+        to_date = ""
 
     codetour_issues = extract_data(fetch_issues(from_date), to_date)
     print_codetour(codetour_issues)
