@@ -4,8 +4,10 @@ from datetime import datetime
 import re
 import requests
 from collections import defaultdict
+import sys
 
 ISSUE_NUMBER_RE = re.compile(r'#(\d+)')
+DATE_RE = re.compile(r'^\d\d\d\d-\d\d-\d\d$')
 
 def fetch_from_repo(repo, since):
     """Fetch list of issues from a given repo."""
@@ -139,5 +141,22 @@ def print_codetour(issues):
 
 
 if __name__ == '__main__':
-    codetour_issues = extract_data(fetch_issues("2015-03-01"), "2015-03-03")
+    if len(sys.argv) == 1:
+        sys.stderr.write('usage: %s <from date> [<to date>]\n' % sys.argv[0])
+        sys.exit(1)
+    from_date = sys.argv[1]
+
+    if (len(sys.argv) > 1) and not DATE_RE.match(from_date):
+        sys.stderr.write('Invalid \'from\' date!\n')
+        sys.exit(1)
+
+    if len(sys.argv) == 3:
+            to_date = sys.argv[2]
+            if not DATE_RE.match(to_date):
+                sys.stderr.write('Invalid \'to\' date!\n')
+                sys.exit(1)
+    else:
+        to_date = datetime.now().strftime("%Y-%m-%d")
+
+    codetour_issues = extract_data(fetch_issues(from_date), to_date)
     print_codetour(codetour_issues)
