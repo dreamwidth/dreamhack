@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 export LJHOME="/dreamhack/opt/dhroot"
 if [ ! -d "$LJHOME/.git" ]; then
   echo "'$LJHOME' doesn't exist, cloning..."
@@ -6,6 +6,7 @@ if [ ! -d "$LJHOME/.git" ]; then
 else
   echo "Pulling from remote dw-free into '$LJHOME'..."
   cd "$LJHOME"
+  git tag -d code-tour   # we want this to be updated each time, for the code tour generator
   git pull
 fi
 
