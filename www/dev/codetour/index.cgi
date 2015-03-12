@@ -126,6 +126,7 @@ else {
   run3([$python, $codetourgenerator, @args], undef, \$output, \$errors);
   my $errno = $?;
   if ($errno == 0) {
+    my $doutput = encode_entities($output);
     print <<HTML;
 <html>
 <head>
@@ -135,7 +136,7 @@ else {
 <h2>Resolved issues from $fromdate to $dtodate</h2>
 <hr>
 <p>Copy and paste the following into a text editor, and then use <a href="http://wiki.dwscoalition.org/notes/How_to_do_a_Code_Tour">the wiki guide</a> to make the code tour. The 'category' field on each issue is set to the milestone if there is one, but for the vast majority this will not be filled in - please edit it if this is the case!</p>
-<textarea rows="20" cols="120">$output</textarea>
+<textarea rows="20" cols="120">$doutput</textarea>
 <p>After you're done editing in your external text editor, <a href="http://www.dreamwidth.org/update?usejournal=dw_dev">open a window to post it in dw_dev</a>.</p>
 </body>
 </html>
