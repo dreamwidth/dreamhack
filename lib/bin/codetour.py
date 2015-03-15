@@ -23,7 +23,6 @@ def fetch_from_repo(repo, since):
         old_req = req
 
         if "link" in req.headers:
-            print req.headers["link"]
             for link in req.headers["link"].split(","):
                 match = re.search('<([^>]+)>; rel="next"', link)
                 if match:
