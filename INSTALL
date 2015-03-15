@@ -326,7 +326,24 @@ apt-get install memcached
 /etc/init.d/memcached stop
 update-rc.d -f memcached remove
 
-43. Install more packages:
+43. The code tour generator uses Python, so you'll need to install it:
+
+apt-get install python
+
+    You will also need to install the 'requests' module; this is most easily
+    done using pip:
+
+pip requests
+
+    If the above command doesn't work because you have a version of Python
+    before 2.7.9, you will need to install it, and *then* install 'requests':
+
+cd /root
+wget https://bootstrap.pypa.io/get-pip.py
+python get-pip.py
+pip requests
+
+44. Install more packages:
 
 # Miscellaneous must-haves
 apt-get install acct emacs joe mc mutt finger info openssh-blacklist openssl-blacklist perl-doc perltidy tcsh tofrodos traceroute zsh
@@ -340,15 +357,15 @@ apt-get install libperl-critic-perl libpod-coverage-perl libtest-pod-coverage-pe
 # Allow people to generate the (extremely old, LJ-based) documentation:
 apt-get install docbook-xml docbook-xsl xsltproc
 
-44. joe (installed above) sets itself as the default editor, so change it back to nano:
+45. joe (installed above) sets itself as the default editor, so change it back to nano:
 
 update-alternatives --config editor
 
-45. Copy the motd.tail file to /etc/motd.tail:
+46. Copy the motd.tail file to /etc/motd.tail:
 
 cp /dreamhack/setup/motd.tail /etc/motd.tail
 
-46. Move the extra MOTD information out of the way so that users don't see it:
+47. Move the extra MOTD information out of the way so that users don't see it:
 
 mkdir /etc/update-motd.d-old
 cd /etc/update-motd.d
@@ -356,7 +373,7 @@ ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
 
     Make sure to leave 99-footer as it's the file that prints motd.tail.
 
-47. Reboot the server so that the MOTD is regenerated. Check that perlbal and
+48. Reboot the server so that the MOTD is regenerated. Check that perlbal and
     Apache still come back up after the reboot. (The Dreamhack you created
     won't, but that's fine; individual Dreamhacks don't get started back up.)
 
@@ -365,26 +382,26 @@ ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
 iptables -t nat -L
 iptables -L
 
-48. Fix the permissions on /dreamhack/var/maintain.d so that everybody can
+49. Fix the permissions on /dreamhack/var/maintain.d so that everybody can
     write to it:
 
 chmod ugo+rwx /dreamhack/var/maintain.d
 
-49. Create a Dreamhack for yourself (if you plan to use one; if not, make a
+50. Create a Dreamhack for yourself (if you plan to use one; if not, make a
     test user) with dh-newuser. Log in and check that everything is fine.
 
-50. Import the root-crontab file:
+51. Import the root-crontab file:
 
 crontab /dreamhack/setup/root-crontab
 
-51. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
+52. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
     following lines:
 
 Defaults	env_reset
 Defaults	lecture=always
 Defaults	lecture_file=/dreamhack/var/sudo-lecture
 
-52. Edit the /etc/ssh/sshd_config file to add the following line:
+53. Edit the /etc/ssh/sshd_config file to add the following line:
 
 AllowTcpForwarding no
 
