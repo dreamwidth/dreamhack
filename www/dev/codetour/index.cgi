@@ -77,7 +77,7 @@ if (!defined $dates) {
 <h1>Code Tour Generator</h1>
 <form method="get" action="index.cgi">
 <p>What dates should the code tour cover?</p>
-<input type="radio" name="dates" value="fromlasttonow" id="dates-fromlasttonow" checked="true"> <label for="dates-fromlasttonow">From the end of the last code tour (according to the repository: $codetourdate) to now</label><br>$warning
+<input type="radio" name="dates" value="fromlasttonow" id="dates-fromlasttonow" checked="true"> <label for="dates-fromlasttonow">From the date of the last code tour (according to the repository: $codetourdate) to now</label><br>$warning
 <input type="radio" name="dates" value="custom" id="dates-custom"> <label for="dates-custom">Between these dates:<br><small>(YYYY-MM-DD format, please; click text boxes for date pickers; end date is optional and can be left blank if you don't want an end date.)</small></label><br>
 <div id="customDates">
 <input type="text" class="date" name="fromdate" id="popupDatePickerFrom" value="$codetourdate"> to <input type="text" class="date" name="todate" placeholder="Now" id="popupDatePickerTo">
@@ -135,7 +135,7 @@ else {
 <body>
 <h2>Resolved issues from $fromdate to $dtodate</h2>
 <hr>
-<p>Copy and paste the following into a text editor, and then use <a href="http://wiki.dwscoalition.org/notes/How_to_do_a_Code_Tour">the wiki guide</a> to make the code tour. The 'category' field on each issue is set to the milestone if there is one, but for the vast majority this will not be filled in - please edit it if this is the case!</p>
+<p>Copy and paste the following into a text editor, and then use <a href="http://wiki.dwscoalition.org/notes/How_to_do_a_Code_Tour">the wiki guide</a> to make the code tour. There may be duplicates between this code tour and the last one near the top; you may need to remove them manually. The 'category' field on each issue is set to the milestone if there is one, but for the vast majority this will not be filled in - please edit it if this is the case!</p>
 <textarea rows="20" cols="120">$doutput</textarea>
 <p>After you're done editing in your external text editor, <a href="http://www.dreamwidth.org/update?usejournal=dw_dev">open a window to post it in dw_dev</a>.</p>
 </body>
@@ -212,7 +212,7 @@ sub error {
 <p><b>$msg</b></p>
 <form method="get" action="index.cgi">
 <p>What dates should the code tour cover?</p>
-<input type="radio" name="dates" value="fromlasttonow" id="dates-fromlasttonow" checked="true"> <label for="dates-fromlasttonow">From the end of the last code tour (according to the repository: $codetourdate) to now</label><br>$warning
+<input type="radio" name="dates" value="fromlasttonow" id="dates-fromlasttonow" checked="true"> <label for="dates-fromlasttonow">From the date of the last code tour (according to the repository: $codetourdate) to now</label><br>$warning
 <input type="radio" name="dates" value="custom" id="dates-custom"> <label for="dates-custom">Between these dates:<br><small>(YYYY-MM-DD format, please; click text boxes for date pickers; end date is optional and can be left blank if you don't want an end date.)</small></label><br>
 <div id="customDates">
 <input type="text" class="date" name="fromdate" id="popupDatePickerFrom" value="$codetourdate"> to <input type="text" class="date" name="todate" placeholder="Now" id="popupDatePickerTo">

@@ -18,15 +18,20 @@ def fetch_from_repo(repo, since):
                               })
     issues = req.json()
 
-    if "link" in req.headers:
-        for link in req.headers["link"].split(","):
-            match = re.search('<([^>]+)>; rel="next"', link)
-            if match:
-                url = match.group(1)
-                req = requests.get(url)
-                issues.extend(req.json())
+    old_req = None
+    while old_req != req:
+        old_req = req
+
+        if "link" in req.headers:
+            for link in req.headers["link"].split(","):
+                match = re.search('<([^>]+)>; rel="next"', link)
+                if match:
+                    url = match.group(1)
+                    req = requests.get(url)
+                    issues.extend(req.json())
 
     return issues
+
 
 def fetch_issues(since_input):
     """Fetch issues from github for a given timespan."""
