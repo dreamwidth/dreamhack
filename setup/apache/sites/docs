@@ -9,7 +9,7 @@
 		AllowOverride None
 	</Directory>
 	<Directory /dreamhack/www/dev/docs/>
-		Options Indexes FollowSymLinks MultiViews +Includes
+		Options Indexes FollowSymLinks MultiViews Includes
 		AllowOverride None
 		DirectoryIndex index.html
 		Order allow,deny
