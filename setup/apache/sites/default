@@ -10,7 +10,7 @@ NameVirtualHost *:8000
 		AllowOverride None
 	</Directory>
 	<Directory /dreamhack/www/>
-		Options Indexes FollowSymLinks MultiViews +Includes
+		Options Indexes FollowSymLinks MultiViews Includes
 		AllowOverride None
 		DirectoryIndex index.shtml
 		Order allow,deny
