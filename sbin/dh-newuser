@@ -298,7 +298,7 @@ ServerRoot $UHOME/apache
 ServerName $USERNAME.$DOMAIN
 
 PidFile etc/httpd.pid
-LockFile etc/accept.lock
+Mutex file:etc default
 Timeout 30
 KeepAlive Off
 
@@ -321,7 +321,7 @@ SendBufferSize 163840
 
 DocumentRoot $LJHOME/htdocs
 <Directory "$LJHOME/htdocs">
-    Options -Indexes FollowSymLinks MultiViews
+    Options FollowSymLinks MultiViews
     AllowOverride All
 </Directory>
 
@@ -335,6 +335,9 @@ PerlRequire  $LJHOME/cgi-bin/modperl.pl
 LoadModule mime_module /usr/lib/apache2/modules/mod_mime.so
 TypesConfig /etc/mime.types
 
+Include /etc/apache2/mods-available/mpm_prefork.load
+Include /etc/apache2/mods-available/mpm_prefork.conf
+Include /etc/apache2/mods-available/authz_core.load
 HTTPDCONF
 
 echo chowning to correct user:group...
