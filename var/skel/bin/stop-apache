@@ -1,3 +1,4 @@
 #!/bin/bash
 
+source $HOME/apache/conf/envvars
 /usr/sbin/apache2ctl -f ~/apache/conf/httpd.conf -k stop

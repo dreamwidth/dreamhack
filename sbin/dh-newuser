@@ -292,53 +292,13 @@ echo Copying home directory...
 cp -a $SKELDIR $UHOME
 echo Creating a .forward...
 echo $EMAIL > $UHOME/.forward    # any mail sent to this account will go to the email address in .forward.
-echo Creating custom httpd.conf...
-cat > $UHOME/apache/conf/httpd.conf <<HTTPDCONF
-ServerRoot $UHOME/apache
-ServerName $USERNAME.$DOMAIN
-
-PidFile etc/httpd.pid
-Mutex file:etc default
-Timeout 30
-KeepAlive Off
-
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
-CustomLog logs/access_log combined
-ErrorLog logs/error_log
-
-Listen $LISTENIP:$PORT
-User $UNIXUSER
-Group $DHGROUP
-
-MinSpareServers 1
-MaxSpareServers 2
-StartServers 2
-MaxClients 2
-MaxRequestsPerChild 100
-
-UseCanonicalName off
-SendBufferSize 163840
-
-DocumentRoot $LJHOME/htdocs
-<Directory "$LJHOME/htdocs">
-    Options FollowSymLinks MultiViews
-    AllowOverride All
-</Directory>
-
-LoadModule apreq_module /usr/lib/apache2/modules/mod_apreq2.so
-LoadModule perl_module /usr/lib/apache2/modules/mod_perl.so
-LoadModule dir_module /usr/lib/apache2/modules/mod_dir.so
-
-PerlSetEnv   LJHOME $LJHOME
-PerlRequire  $LJHOME/cgi-bin/modperl.pl
-
-LoadModule mime_module /usr/lib/apache2/modules/mod_mime.so
-TypesConfig /etc/mime.types
-
-Include /etc/apache2/mods-available/mpm_prefork.load
-Include /etc/apache2/mods-available/mpm_prefork.conf
-Include /etc/apache2/mods-available/authz_core.load
-HTTPDCONF
+echo Creating custom envvars file...
+cat > $UHOME/apache/conf/envvars <<ENVVARS
+export DREAMHACK_USER="$USERNAME"
+export DREAMHACK_PORT="$PORT"
+export DREAMHACK_DIR="$UHOME"
+export DREAMHACK_SSHNAME="$UNIXUSER"
+ENVVARS
 
 echo chowning to correct user:group...
 chown -R $UNIXUSER:$DHGROUP $UHOME
