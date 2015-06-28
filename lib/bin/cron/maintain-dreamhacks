@@ -251,6 +251,7 @@ MESSAGE
       $sth->execute((@{$userinfo->{'ports'}})[0]);
       my ($domain, $homedir, $apachedir) = $sth->fetchrow_array();
 
+      setUserEnvVars($username, (@{$userinfo->{'ports'}})[0]);
       system("su -lc \"/usr/sbin/apache2ctl -f $homedir/$apachedir/conf/httpd.conf -k start\" $username");
       sleep 3;
       my $notes = (-f "$homedir/$apachedir/etc/httpd.pid" ? "" : "
@@ -651,7 +652,8 @@ MESSAGE
         $sth = $dbh->prepare("SELECT `homedir`, `apachedir` FROM `users` LEFT OUTER JOIN `userports` USING (`username`) WHERE `port` = ?");
         $sth->execute($port);
         ($homedir, $apachedir) = $sth->fetchrow_array();
-        system("/usr/sbin/apache2ctl -f $homedir/$apachedir/conf/httpd.conf -k stop");
+        setUserEnvVars($username, $port);
+        system("su -lc \"/usr/sbin/apache2ctl -f $homedir/$apachedir/conf/httpd.conf -k stop\" $username");
       }
 
       # migrate!
@@ -971,4 +973,17 @@ sub sendEmail {
   my $fh = $newmsg->open();
   print $fh $body;
   $fh->close();
+}
+
+sub setUserEnvVars {
+  my ($sshname, $port) = @_;
+  my $sth = $dbh->prepare("SELECT `username`, `port`, `homedir`, `ssh_username` FROM `userports` LEFT OUTER JOIN `users` USING (`username`) WHERE `ssh_username` = ? AND `port` = ?");
+  $sth->execute($sshname, $port);
+  if ($sth->rows > 0) {
+    my $row = $sth->fetchrow_hashref();   # just take the first one
+    $ENV{'DREAMHACK_USER'} = $row->{'username'};
+    $ENV{'DREAMHACK_PORT'} = $row->{'port'};
+    $ENV{'DREAMHACK_DIR'} = $row->{'homedir'};
+    $ENV{'DREAMHACK_SSHNAME'} = $row->{'ssh_username'};
+  }
 }
