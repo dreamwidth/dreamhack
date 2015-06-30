@@ -158,16 +158,20 @@ The following is an explanation of the files/directories you will find in your
 home directory:
 
   * apache/
-      This directory contains your Apache instance configuration and log files.
-      You are free to modify your Apache configuration (in apache/conf/httpd.conf)
-      as necessary. However, please note the following:
+      This directory contains your Apache configuration and log files.
 
-      * Your Apache config is configured to listen on 127.0.0.1 on a high port
-        (>8080). *This is correct*, so please do not change it; Web requests
-        are routed through a perlbal installation which allows you to use port
-        80 as normal.
-      * Please do not change the min/max* settings without good reason. If you
-        feel they could be set to better values, let me know. :)
+      By default, the Apache configuration simply defines a few environment
+      variables for your particular Dreamhack account (in the conf/envvars
+      file) and then uses a generic Apache config tailored for Dreamhacks;
+      among other things, this means that you will generally never need to
+      update your Apache config as updates to the generic one will be able to
+      take effect.
+
+      You will likely never have to change your Apache configuration, but if
+      you find it to be necessary, please contact Sophie via either email
+      (<sophie@hack.dreamwidth.net>), IRC or the "dw_dev" Dreamwidth community
+      first in order to make sure that your changes are reflected in the
+      generic configration, if necessary.
 
   * bin/
       This directory is the first entry in your PATH environment variable, and
