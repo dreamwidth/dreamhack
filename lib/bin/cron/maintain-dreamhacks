@@ -188,7 +188,7 @@ MESSAGE
       # 2. password
       passwd($username, "!");
       # 3. kill kill kill
-      system("skill -KILL -u $username");
+      system("/usr/bin/killall", "-KILL", "-u", "$username");
 
       # delete everything
       foreach my $port (@{$userinfo->{'ports'}}) {
@@ -631,7 +631,7 @@ MESSAGE
 
       # kill with extreme prejudice
       passwd($username, "!");   # stop them from logging back in again for now
-      system("skill -KILL -u $username");
+      system("/usr/bin/killall", "-KILL", "-u", "$username");
 
       my $error = 0;
 

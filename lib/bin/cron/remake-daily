@@ -20,7 +20,7 @@ else
   ps u -u dh-daily   # a way to see if the previous one worked
   echo "Stopping Apache... (ignore the error you get first thing in the delete-user process)"
   su -lc "stop-apache" dh-daily
-  skill -KILL -u dh-daily
+  /usr/bin/killall -KILL -u dh-daily
   /dreamhack/sbin/dh-deluser daily 7000
 fi
 
