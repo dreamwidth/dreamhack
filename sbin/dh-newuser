@@ -300,6 +300,7 @@ export DREAMHACK_PORT="$PORT"
 export DREAMHACK_DIR="$UHOME"
 export DREAMHACK_SSHNAME="$UNIXUSER"
 ENVVARS
+chmod u-w $UHOME/apache/conf/envvars
 
 echo chowning to correct user:group...
 chown -R $UNIXUSER:$DHGROUP $UHOME
