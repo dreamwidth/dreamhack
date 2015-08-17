@@ -17,15 +17,15 @@ my $todate = param("todate");
 
 my $git = '/usr/bin/git --git-dir="/dreamhack/opt/dhroot/.git" --work-tree="/dreamhack/opt/dhroot"';
 my ($refreshcommit, $refreshdate) = split(/,/, `$git show -s --pretty=format:"%H,%ci" develop`);
-my $codetourrev = `$git rev-parse code-tour`;
+my $codetourrev = `$git rev-parse origin/code-tour`;
 my @revs = split(/\n/, `$git log --first-parent --pretty=format:"%H" $codetourrev^..develop`);
-# check to see that $codetourrev is the last rev in @revs; if not, that means the 'code-tour' tag isn't on a 'develop' merge and things might be a bit weird.
+# check to see that $codetourrev is the last rev in @revs; if not, that means the 'code-tour' branch isn't on a 'develop' merge and things might be a bit weird.
 my $warning = "";
 if ($revs[$#revs] eq $codetourrev) {
-  $warning = "<p><strong>Warning:</strong> The 'code-tour' tag doesn't seem to be on a commit or merge made directly to 'develop'. You may want to enter the date of the last code tour manually.</p>";
+  $warning = "<p><strong>Warning:</strong> The 'code-tour' branch doesn't seem to be on a commit or merge made directly to 'develop'. You may want to enter the date of the last code tour manually.</p>";
 }
 
-my $ctdateunix = `$git show -s --pretty=format:"%ct" code-tour`;
+my $ctdateunix = `$git show -s --pretty=format:"%ct" origin/code-tour`;
 my (undef, undef, undef, $ctday, $ctmonth, $ctyear) = gmtime($ctdateunix);
 my $codetourdate = sprintf("%d-%02d-%02d", ($ctyear + 1900), ($ctmonth + 1), $ctday);
 # git log --first-parent --oneline code-tour^..develop
@@ -77,14 +77,16 @@ if (!defined $dates) {
 <h1>Code Tour Generator</h1>
 <form method="get" action="index.cgi">
 <p>What dates should the code tour cover?</p>
-<input type="radio" name="dates" value="fromlasttonow" id="dates-fromlasttonow" checked="true"> <label for="dates-fromlasttonow">From the date of the last code tour (according to the repository: $codetourdate) to now</label><br>$warning
+<input type="radio" name="dates" value="fromlasttonow" id="dates-fromlasttonow" checked="true"> <label for="dates-fromlasttonow">From the end of the last code tour (according to the repository: $codetourdate) to now</label><br>$warning
 <input type="radio" name="dates" value="custom" id="dates-custom"> <label for="dates-custom">Between these dates:<br><small>(YYYY-MM-DD format, please; click text boxes for date pickers; end date is optional and can be left blank if you don't want an end date.)</small></label><br>
 <div id="customDates">
 <input type="text" class="date" name="fromdate" id="popupDatePickerFrom" value="$codetourdate"> to <input type="text" class="date" name="todate" placeholder="Now" id="popupDatePickerTo">
 </div>
 <p><input type="submit" value="Generate"></p>
 </form>
-<p><small>The default value of the 'from' date is determined by the '<b>code-tour</b>' tag in the local dw-free repository, which is refreshed weekly; the date of the last commit on 'develop' according to this repository is <a href="https://github.com/dreamwidth/dw-free/commit/$refreshcommit">$refreshdate</a>.</small></p>
+<p><small>The default value of the 'from' date is determined by the latest commit in the '<b>code-tour</b>' branch in the local copy of the dw-free repository, which is refreshed weekly.</small></p>
+
+<p><small>As a guide to how up-to-date the local copy of the repository is, the last commit on 'develop' according to this repository was made on <a href="https://github.com/dreamwidth/dw-free/commit/$refreshcommit">$refreshdate</a>. The closer this date is to today, the better.</small></p>
 <p>This script uses <span style='white-space: nowrap;'><a href='http://afuna.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://afuna.dreamwidth.org/'><b>afuna</b></a></span>'s code tour generator, programmed in Python.</p>
 </body>
 </html>
