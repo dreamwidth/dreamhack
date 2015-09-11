@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+require '/dreamhack/lib/dreamhacks-db.pl';
+
+my $sth = $dbh->prepare("SELECT `homedir` FROM `users`");
+$sth->execute();
+while (my ($dir) = $sth->fetchrow_array()) {
+  print "$dir\n";
+}
