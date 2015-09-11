@@ -6,11 +6,12 @@ case $1 in
     exit 3
   ;;
   stop)
-    for dreamhack in `/dreamhack/lib/bin/all-apache-dirs`; do
-      if [ -f "$dreamhack/etc/httpd.pid" ]; then
+    for dreamhack in `/dreamhack/lib/bin/all-home-dirs`; do
+      if [ -f "$dreamhack/apache/etc/httpd.pid" ]; then
         echo "Stopping Dreamhack at $dreamhack..."
-        echo "  /usr/sbin/apache2ctl -f $dreamhack/conf/httpd.conf -k stop"
-        /usr/sbin/apache2ctl -f $dreamhack/conf/httpd.conf -k stop
+        DREAMHACK_DIR="$dreamhack"
+        export DREAMHACK_DIR
+        /usr/sbin/apache2ctl -f /dreamhack/etc/apache/safe-stop.conf -k stop   # uses $DREAMHACK_DIR to know which Apache to stop
         sleep 1
       fi
     done
