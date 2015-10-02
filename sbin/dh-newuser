@@ -430,8 +430,28 @@ su -lc "
   mkdir -p ext/local/etc
   echo 'highest' > ext/local/.dir_scope
 
-  cp -a $LJHOME/doc/config-local.pl.txt $LJHOME/ext/local/etc/config-local.pl
-  cp -a $LJHOME/doc/config-private.pl.txt $LJHOME/ext/local/etc/config-private.pl
+  # we can't make any changes to these files or they'll show up in 'git status', so we can't move them.
+  cp -a $LJHOME/etc/config-local.pl $LJHOME/ext/local/etc/config-local.pl
+  cp -a $LJHOME/etc/config-private.pl $LJHOME/ext/local/etc/config-private.pl
+
+  # put a README in place so that people will know what to do
+  cat > $LJHOME/etc/README.txt <<README
+
+Please note that changes to the files in this directory might not take effect!
+
+This directory hosts the default configuration files from the 'dw-free' Git
+repository, and on a Dreamhack these files should not be edited unless you are
+working on an issue that requires a change to the default configuration files.
+To change the configuration of your Dreamhack, the correct configuration files
+to modify are located in:
+  \$LJHOME/ext/local/etc/
+
+The files in the above directory take precedence over the files in \$LJHOME/etc/,
+and will never be overwritten. If you wish to modify a file in this directory
+and it doesn't exist in \$LJHOME/ext/local/etc/, copy it there first, and then
+modify the copy.
+
+README
   chmod go-rwx $LJHOME/ext/local/etc/config-private.pl
 " $UNIXUSER
 
