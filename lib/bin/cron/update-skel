@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 export LJHOME="/dreamhack/opt/dhroot"
 if [ ! -d "$LJHOME/.git" ]; then
   echo "'$LJHOME' doesn't exist, cloning..."
