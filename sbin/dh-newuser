@@ -435,7 +435,7 @@ su -lc "
   cp -a $LJHOME/etc/config-private.pl $LJHOME/ext/local/etc/config-private.pl
 
   # put a README in place so that people will know what to do
-  cat > $LJHOME/etc/README.txt <<README
+  cat > $LJHOME/etc/README.txt <<'README'
 
 Please note that changes to the files in this directory might not take effect!
 
