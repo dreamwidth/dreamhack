@@ -1,12 +1,13 @@
 #!/usr/bin/perl
 
 use CGI qw(:standard);
-print header;
+print header("text/html; charset=UTF-8");
 
 use HTML::Entities;
 use LWP::Simple qw(get);
 use Text::CSV::Slurp;
 use IPC::Run3;
+use Encode;
 
 my $python = "/usr/bin/python";
 my $codetourgenerator = "/dreamhack/lib/bin/codetour.py";
@@ -128,6 +129,7 @@ else {
   run3([$python, $codetourgenerator, @args], undef, \$output, \$errors);
   my $errno = $?;
   if ($errno == 0) {
+    $output = decode("utf-8", $output);
     my $doutput = encode_entities($output);
     print <<HTML;
 <html>
