@@ -142,7 +142,7 @@ def print_codetour(issues):
     text.append("%d total issues resolved" % len(issues))
     text.append("Contributors: %s" % ', '.join(contributors_list))
 
-    print '\n'.join(text)
+    print '\n'.join(text).encode('utf-8')
 
 
 if __name__ == '__main__':
