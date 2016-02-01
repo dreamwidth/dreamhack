@@ -70,7 +70,7 @@ Dreamhack Github Conversion Script
 
 This script will convert your Dreammhack to use git. It is based on the
 instructions available on the wiki at:
-    http://wiki.dwscoalition.org/wiki/index.php/Moving_your_Dreamwidth_installation_to_use_Github
+    http://wiki.dreamwidth.net/wiki/index.php/Moving_your_Dreamwidth_installation_to_use_Github
 
 END
 }
@@ -81,7 +81,7 @@ in order to use this script. If you don't have one, or you haven't forked
 both projects, please refer to the "On github, fork dreamwidth's dw-free
 and dw-nonfree repositories" section of this link (note that you don't need
 to read any of the other sections):
-    http://wiki.dwscoalition.org/wiki/index.php/Moving_your_Dreamwidth_installation_to_use_Github
+    http://wiki.dreamwidth.net/wiki/index.php/Moving_your_Dreamwidth_installation_to_use_Github
 
 END
 $| = 1;
