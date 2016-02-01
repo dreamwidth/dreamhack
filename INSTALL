@@ -267,7 +267,7 @@ cpan Perlbal
     the /dreamhack/sbin/dh-newuser file and remove that option in the line
     where chpasswd is called (newer versions of Ubuntu use MD5 automatically).
 
-35. Go to http://wiki.dwscoalition.org/notes/Dreamwidth_Scratch_Installation
+35. Go to http://wiki.dreamwidth.net/notes/Dreamwidth_Scratch_Installation
     and run whatever huge 'apt-get install' command is listed under the
     "Installing necessary packages" heading.
 

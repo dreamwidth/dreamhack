@@ -259,7 +259,7 @@ MESSAGE
 However, your Apache instance could not be automatically started. This may be
 due to problems within the DW code as it currently stands. You may want to try
 updating the code by following the instructions at:
-http://wiki.dwscoalition.org/notes/Dev_Maintenance
+http://wiki.dreamwidth.net/notes/Dev_Maintenance
 
 To start the server again, use the following command:
 start-apache");
