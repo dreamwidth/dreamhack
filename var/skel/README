@@ -43,11 +43,12 @@ you're reading this from the email itself, these details are above.)
 
 The first time you connect, your client will tell you that it doesn't have the
 host key in its cache. Check to make sure that the key fingerprint it lists is
-the same as below, and if so, feel free to continue. (Generally this will
-involve clicking or typing "Yes" at the prompt.) If the host key doesn't match,
-please contact Sophie at <sophie@hack.dreamwidth.net>.
+the same as one of the items below, and if so, feel free to continue.
+(Generally this will involve clicking or typing "Yes" at the prompt.) If the
+host key doesn't match, please contact Sophie at <sophie@hack.dreamwidth.net>.
 
-  * Host key (RSA): ed:e2:9d:86:4b:8e:a5:a9:ed:12:fc:ed:16:73:bd:c7
+  *    MD5: ed:e2:9d:86:4b:8e:a5:a9:ed:12:fc:ed:16:73:bd:c7
+  * SHA256: SHA256:diM7UFFFywhe5bJHuam1svTSuXEuVN1kmaDyT6Yjri0
 
 When you log in for the first time, you will be reminded to create the
 password for the 'system' user. This can be done by running the following
