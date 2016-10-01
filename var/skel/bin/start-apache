@@ -2,16 +2,25 @@
 
 source $HOME/apache/conf/envvars
 /usr/sbin/apache2ctl -f ~/apache/conf/httpd.conf -k start
-sleep 3
-ERROR=0
 PIDFILE=~/apache/etc/httpd.pid
-if [ ! -f $PIDFILE ]; then
-  ERROR=1;
-elif kill -0 `cat ~/apache/etc/httpd.pid`; then
-  echo "Apache started successfully!"
-else ERROR=1; fi
+
+echo -n "Waiting for Apache to start"
+for i in {1..6}; do
+  sleep 1
+  echo -n "."
+  ERROR=0
+  if [ ! -f $PIDFILE ]; then
+    ERROR=1;
+  elif kill -0 `cat ~/apache/etc/httpd.pid`; then
+    echo
+    echo "Apache started successfully!"
+  else ERROR=1; fi
+
+  if [[ "$ERROR" == "0" ]]; then break; fi
+done
 
 if [[ "$ERROR" == "1" ]]; then
+  echo
   echo "Apache failed to start, please review the error_log. (last 5 lines of the log follow:)"
   tail -n5 ~/apache/logs/error_log
 fi
