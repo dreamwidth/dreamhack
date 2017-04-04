@@ -295,7 +295,7 @@ PARA
                                 to      => $username,
                                 bcc     => 'sophie',
                               );
-      $msg->set("From", '"Sophie" <sophie@hack.dreamwidth.net>');
+      $msg->set("From", '"Sophie" <sophie@dreamwidth.org>');
       my $fh = $msg->open();
       print $fh <<MESSAGE;
 [this is an automatic message]
@@ -969,7 +969,7 @@ sub sendEmail {
                                to      => $emailaddr,
                                bcc     => 'sophie',
                              );
-  $newmsg->set("From", '"Sophie" <sophie@hack.dreamwidth.net>');
+  $newmsg->set("From", '"Sophie" <sophie@dreamwidth.org>');
   my $fh = $newmsg->open();
   print $fh $body;
   $fh->close();

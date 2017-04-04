@@ -21,13 +21,14 @@ USERPREFIX="dh"					# the prefix used for both UNIX and database usernames
 						# UNIX users get "$USERPREFIX-", database users get "$USERPREFIX_"
 DHGROUP="dreamhack"				# the group all created users should be a part of - this must be created first with groupadd.
 USERSHELL="/bin/bash"				# the shell the created user should get
-USERHARDQUOTA=512000				# the hard quota that should be given, in blocks.
+USERHARDQUOTA=768000				# the hard quota that should be given, in blocks.
 						# (needs kernel and filesystem quota support; use 0 to disable)
 
 MYSQLUSER="$dh_db_root_username"		# a MySQL user that has permission to create users and databases
 MYSQLPASSWORD="$dh_db_root_password"
 DBPREFIX="dreamhack"				# the prefix for the database name
 						# database user prefixes are controlled by USERPREFIX, above.
+TESTDBPREFIX="test_$DBPREFIX"                   # the prefix for the test database name
 
 # mail settings
 MAILFROM="$dh_from_email_address"		# the address that the auto-generated email should come from
@@ -149,8 +150,9 @@ if [ "$DELETE" == "1" ]; then
     # delete mysql user
     mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP USER '${USERPREFIX}_$USERNAME'@'localhost'" 
 
-    # delete mysql database 
+    # delete mysql databases
     mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${DBPREFIX}_$USERNAME\`"
+    mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_$USERNAME\`"
   else
     APACHESLEFT=`$LIBDIR/get-apaches $USERNAME`
     if [ "$APACHESLEFT" == "" ]; then
@@ -165,8 +167,9 @@ if [ "$DELETE" == "1" ]; then
       # delete mysql user
       mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP USER '${USERPREFIX}_$USERNAME'@'localhost'" 
 
-      # delete mysql database 
+      # delete mysql databases
       mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${DBPREFIX}_$USERNAME\`"
+      mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_$USERNAME\`"
     else
       echo "Some Apaches still left, not deleting other stuff"
     fi
@@ -306,6 +309,13 @@ echo chowning to correct user:group...
 chown -R $UNIXUSER:$DHGROUP $UHOME
 echo setting rwx--x--x on home directory...
 chmod 711 $UHOME
+echo creating initial .gitconfig file...
+cat > $UHOME/.gitconfig <<CONFIG
+[user]
+	name = $PREFNAME
+	email = $EMAIL
+CONFIG
+chown $UNIXUSER:$DHGROUP $UHOME/.gitconfig
 
 if [ "$COPYDHROOT" == "1" ]; then
   echo copying and updating dhroot...
@@ -411,28 +421,31 @@ LJHOME=$LJHOME
 CRON
 chown $UNIXUSER:$DHGROUP $UHOME/crontab-import
 
-# make the initial .gitconfig file
-cat > $UHOME/.gitconfig <<CONFIG
-[user]
-	name = $PREFNAME
-	email = $EMAIL
-CONFIG
-chown $UNIXUSER:$DHGROUP $UHOME/.gitconfig
-
 # Set up MySQL
-mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "CREATE DATABASE \`${DBPREFIX}_$USERNAME\`"
-mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "GRANT ALL PRIVILEGES ON \`${DBPREFIX}_$USERNAME\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD'"
+mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "
+  CREATE DATABASE \`${DBPREFIX}_$USERNAME\`;
+  GRANT ALL PRIVILEGES ON \`${DBPREFIX}_$USERNAME\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD';
+
+  CREATE DATABASE \`${TESTDBPREFIX}_$USERNAME\`;
+  GRANT ALL PRIVILEGES ON \`${TESTDBPREFIX}_$USERNAME\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD';
+"
 
 # create initial LJ config and tweak it for the installation
 # since this deals with an untrusted LJHOME, I'm su'ing this even though it shouldn't cause any problems
+# neither the .dir_scope removal nor the --remove-destination switch to cp(1) are absolutely necessary since
+# this is being done as a user and not root, but it makes me feel better.
 su -lc "
   cd $LJHOME
-  mkdir -p ext/local/etc
+  mkdir ext/local{,/etc,/t}
+  rm -f ext/local/.dir_scope
   echo 'highest' > ext/local/.dir_scope
 
   # we can't make any changes to these files or they'll show up in 'git status', so we can't move them.
-  cp -a $LJHOME/etc/config-local.pl $LJHOME/ext/local/etc/config-local.pl
-  cp -a $LJHOME/etc/config-private.pl $LJHOME/ext/local/etc/config-private.pl
+  cp --remove-destination -a $LJHOME/etc/config-local.pl $LJHOME/ext/local/etc/config-local.pl
+  cp --remove-destination -a $LJHOME/etc/config-private.pl $LJHOME/ext/local/etc/config-private.pl
+  cp --remove-destination -a $LJHOME/t/config-test-private.pl $LJHOME/ext/local/t/config-test-private.pl
+  chmod go-rwx $LJHOME/ext/local/etc/config-private.pl
+  chmod go-rwx $LJHOME/ext/local/t/config-test-private.pl
 
   # put a README in place so that people will know what to do
   cat > $LJHOME/etc/README.txt <<'README'
@@ -452,7 +465,6 @@ and it doesn't exist in \$LJHOME/ext/local/etc/, copy it there first, and then
 modify the copy.
 
 README
-  chmod go-rwx $LJHOME/ext/local/etc/config-private.pl
 " $UNIXUSER
 
 # edit the config to put the right domain in
@@ -470,16 +482,23 @@ su -lc "
 " $UNIXUSER
 
 # populate the database and run texttool, and start the server
-# the first update-db command needs to be run twice dur to a dbnotes check that fails
+# the first update-db command needs to be run twice due to a dbnotes check that fails
 NOTES=""
 su -lc "
   PS1=blah source $UHOME/.bashrc
 
- \$LJHOME/bin/upgrading/update-db.pl -r --innodb
- \$LJHOME/bin/upgrading/update-db.pl -r --innodb
- \$LJHOME/bin/upgrading/update-db.pl -r --cluster=all --innodb
- \$LJHOME/bin/upgrading/update-db.pl -p
- \$LJHOME/bin/upgrading/texttool.pl load
+  \$LJHOME/bin/upgrading/update-db.pl -r --innodb
+  \$LJHOME/bin/upgrading/update-db.pl -r --innodb
+  \$LJHOME/bin/upgrading/update-db.pl -r --cluster=all --innodb
+  \$LJHOME/bin/upgrading/update-db.pl -p
+  \$LJHOME/bin/upgrading/texttool.pl load
+" $UNIXUSER
+
+# compile the stylesheets
+su -lc "
+  PS1=blah source $UHOME/.bashrc
+
+  \$LJHOME/bin/build-static.sh
 " $UNIXUSER
 
 # set up the TheSchwartz database
@@ -573,17 +592,13 @@ rm $TEMPFILE
 #  $LIBDIR/cmds-to-perlbal <<STUFF
 #$PERLBAL
 #STUFF
-#  if [ "$SSHDOMAIN" != "$DOMAIN" ]; then
-#    NOTES="
-#
-#Please note that the SSH/SFTP server to use, \"$SSHDOMAIN\",
-#is not the same as the domain in your URL, \"$DOMAIN\"!
-#This is a temporary measure due to a server upgrade taking place. The
-#URL given will always point to the correct server, but it is possible
-#that some of the documentation on our wiki (see below) might not have
-#been changed to use the new SSH server name yet.$NOTES"
-#  fi
 #fi
+if [ "$SSHDOMAIN" != "$DOMAIN" ]; then
+  NOTES="
+
+Please note that the SSH/SFTP server to use, \"$SSHDOMAIN\",
+is not the same as the domain in your URL, \"$DOMAIN\"!$NOTES"
+fi
 
 echo -n "All done! Finished at: "
 date

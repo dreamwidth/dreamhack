@@ -14,11 +14,16 @@ my $newfile = "";
 open(LOCAL, "<", $local);
 #my $gotdbinfo      = 0;
 #my $gotschwartzdbs = 0;
+my $foundstatdocs = 0;
 while (<LOCAL>) {
   my $line = $_;
   $line=~s/[\r\n]+//g;
   if ($line=~/^( *\$EMBED_MODULE_DOMAIN) = "embed\.my-other-domain\.net";$/) {
-    $line = "$1 = \"embed.system.$username.hack.dreamwidth.net\";"
+    $line = "$1 = \"embed.system.$username.hack.dreamwidth.net\";";
+  }
+  if ($line=~/^( *\$STATDOCS) = "[^"]+"(;.*)$/) {
+    $line = "$1 = \"\$HOME/build/static\"$2";
+    $foundstatdocs = 1;
   }
 #  elsif ($gotschwartzdbs) {
 #    if ($line eq "") { $gotschwartzdbs = 0; }
@@ -28,6 +33,13 @@ while (<LOCAL>) {
   $newfile .= "$line\n";
 }
 close(LOCAL);
+
+if ($foundstatdocs == 0) {
+  # not in sample file yet, add it locally
+  my $statdocsline = '    $STATDOCS = "$HOME/build/static";';
+  # add it at the end of the file inside the block
+  $newfile=~s/^(}\n\n1;)/\n$statdocsline\n$1/m;
+}
 
 open(LOCAL, ">", $local);
 print LOCAL $newfile;
