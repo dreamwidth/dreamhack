@@ -93,6 +93,10 @@ su -c "cp -r /dreamhack/setup/perlbal/* /home/perlbal/." perlbal
 cp -a /dreamhack/setup/initscripts/perlbal-initscript /etc/init.d/perlbal
 cp -a /dreamhack/setup/initscripts/stop-dreamhacks-initscript /etc/init.d/stop-dreamhacks
 
+    On a systemd-based system, you need to reload the units:
+
+systemctl daemon-reload
+
 13. Run these commands to add the initscripts to the bootup/shutdown sequence:
 
 update-rc.d perlbal defaults
@@ -129,15 +133,25 @@ iptables -A OUTPUT -d 127.0.0.1 -p tcp --destination-port 11211 -j REJECT
    iptables defaults'.
 
    If /etc/init.d/iptables doesn't exist, you're probably using a newer Ubuntu.
-   Do "iptables-save > /etc/iptables.rules" instead, then edit
-   /etc/network/interfaces and add this line after the appropriate iface line,
+   Do "iptables-save > /etc/iptables.rules" instead, then:
+
+   * if you're on a non-AWS system, edit /etc/network/interfaces;
+   * if you're on an AWS system, edit /etc/network/interfaces.d/50-cloud-init.cfg.
+
+   In the file you're editing, add this line after the appropriate iface line,
    indented two spaces:
 
    pre-up iptables-restore < /etc/iptables.rules
 
+   If you're on an AWS system, you'll also need to create the file
+   /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg with the following line
+   in it:
+
+   network: {config: disabled}
+
 15. Install Apache2, mod_perl, and MySQL (and also PHP, if wanted):
 
-apt-get install apache2-mpm-prefork libapache2-mod-perl2 mysql-server
+apt-get install apache2 apache2-bin libapache2-mod-perl2 mysql-server
 apt-get install libapache2-mod-php5   # if wanted, but not required
 
     Choose any MySQL root password you like, but make it secure - this is a
@@ -162,10 +176,13 @@ cp /dreamhack/setup/apache/ports.conf /etc/apache2/ports.conf
     'is-dh-stopped' configuration file. Feel free to comment out or delete that
     Listen line if you want.)
 
-18. Enable the rewrite and include modules:
+18. Disable/enable needed Apache modules:
 
 a2enmod rewrite
 a2enmod include
+a2dismod mpm_event
+a2enmod mpm_prefork
+a2enmod cgi
 
 19. Restart Apache so that all the changes take effect:
 
@@ -183,17 +200,22 @@ dd if=/dev/random bs=9 count=1 2>/dev/null | base64
     One of these passwords will be used for read-only access, and the other for
     read-write access.
 
-22. Create a 'dreamhacks' database:
+22. Edit /etc/mysql/conf.d/mysqld.cnf (creating it if necessary). In the
+    [mysqld] section, put:
+
+    sql_mode = ''
+
+23. Create a 'dreamhacks' database:
 
 mysqladmin -uroot -p create dreamhacks
 
    Enter your MySQL root password when prompted.
 
-23. Import the MySQL schema file into the newly-created 'dreamhacks' database:
+24. Import the MySQL schema file into the newly-created 'dreamhacks' database:
 
 mysql -uroot -p dreamhacks < /dreamhack/setup/dreamhacks-schema.sql
 
-24. Create MySQL users for 'dreamhacks' and 'dreamhacks_ro', and create a
+25. Create MySQL users for 'dreamhacks' and 'dreamhacks_ro', and create a
     database 'dreamhacks'. Give the user 'dreamhacks' read-write access to the
     DB, along with LOCK TABLES; give 'dreamhacks_ro' read-only access to the
     'users' and 'userports' tables only, along with LOCK TABLES:
@@ -206,19 +228,19 @@ GRANT SELECT ON `dreamhacks`.`users` TO 'dreamhacks_ro'@'localhost' IDENTIFIED B
 GRANT SELECT ON `dreamhacks`.`userports` TO 'dreamhacks_ro'@'localhost';
 GRANT LOCK TABLES ON `dreamhacks`.* TO 'dreamhacks_ro'@'localhost';
 
-25. Copy the settings files and secure them appropriately:
+26. Copy the settings files and secure them appropriately:
 
 cp /dreamhack/local/samples/settings.nonroot.sample /dreamhack/local/settings.nonroot
 cp /dreamhack/local/samples/settings.shared.sample /dreamhack/local/settings.shared
 cp /dreamhack/local/samples/settings.root.sample /dreamhack/local/settings.root
 chmod 600 /dreamhack/local/settings.root
 
-26. Edit the newly-created config files in /dreamhack/local/ with your
+27. Edit the newly-created config files in /dreamhack/local/ with your
     favourite editor to include the various passwords created in the previous
     steps. While you're at it, change settings.shared so that the details for
     this installation are correct.
 
-27. Install Mercurial and Subversion:
+28. Install Mercurial and Subversion:
 
 apt-get install mercurial subversion
 
@@ -226,7 +248,10 @@ apt-get install mercurial subversion
     look at the LJ code, which would require Subversion. Similarly, Mercurial
     may still be useful in some cases. Better to have it than not, I feel.)
 
-28. Enable quota support for the filesystem, if it's not already enabled:
+29. Enable quota support for the filesystem, if it's not already enabled:
+      * Install the necessary kernel modules to use quota support (replace the
+        package name with the appropriate kernel version):
+          apt-get install linux-image-extra-4.4.0-64-generic
       * apt-get install quota
       * Edit /etc/fstab to make sure 'usrquota' is listed in the options of the
         / partition,
@@ -236,7 +261,7 @@ apt-get install mercurial subversion
           quotacheck -mcu /    # create aquota.user file
           quotaon /            # turn quota checking on
 
-29. Create a user for Dreamhack applications to go to if you haven't already.
+30. Create a user for Dreamhack applications to go to if you haven't already.
     For example:
 
 useradd -m sophie
@@ -244,28 +269,29 @@ useradd -m sophie
     Create a .forward file in their home directory, chown it to them, and point
     it to an appropriate email address.
 
-30. If necessary, replace all instances of 'sophie' with the correct username
+31. If necessary, replace all instances of 'sophie' with the correct username
     in /dreamhack/lib, /dreamhack/sbin and /dreamhack/www/do. (There are
     numerous other places where you'll also want to change my name!)
 
-31. Install 'build-essential' so that you can build CPAN modules:
+32. Install 'build-essential' so that you can build CPAN modules:
 
 apt-get install build-essential
 
-32. Install Perlbal's prerequisites:
+33. Install Perlbal's prerequisites:
 
 apt-get install libyaml-perl        # not actually needed for perlbal, but shuts CPAN up
-apt-get install libsys-syscall-perl
-cpan Danga::Socket
+apt-get install libsys-syscall-perl libdanga-socket-perl
 apt-get install telnet   # used by the initscripts and new user installation, may already be installed
 
-33. Install Perlbal from CPAN:
+34. Install Perlbal from CPAN:
 
 cpan Perlbal
 
-34. Check the output of 'chpasswd --help'. If the -m option is not listed, edit
-    the /dreamhack/sbin/dh-newuser file and remove that option in the line
-    where chpasswd is called (newer versions of Ubuntu use MD5 automatically).
+    Note that Perlbal's test procedure requires port 8000 to be free, so if you
+    reloaded Apache earlier you may need to stop it first (but don't forget to
+    start it again afterwards!):
+
+/etc/init.d/apache2 stop
 
 35. Go to http://wiki.dreamwidth.net/notes/Dreamwidth_Scratch_Installation
     and run whatever huge 'apt-get install' command is listed under the
@@ -309,7 +335,22 @@ bin/checkconfig.pl
 
     Install any modules which it needs, whether required or optional.
 
-41. Run the test suite:
+41. Set up the test database for dh-daily for the next step:
+
+su - dh-daily
+mkdir $LJHOME/ext/local/t
+cp $LJHOME/t/*.pl $LJHOME/ext/local/t/.
+
+    After copying the *.pl files, edit them to point to the test database.
+    * don't forget the "test_" prefix
+    * add "'cluster1' => 1," to master role
+    * edit @CLUSTERS and $DEFAULT_CLUSTER to suit
+
+    After editing the files, initialise the test DB:
+
+$LJHOME/t/bin/initialize-db
+
+42. Run the test suite:
 
 su - dh-daily
 cd $LJHOME
@@ -317,63 +358,52 @@ prove t/*.t
 
     These tests should all either pass or be skipped. (As of this writing, the
     following tests are skipped: t/captcha.t, t/cprod.t,
-    t/directorysearch-extra.t, t/directorysearch.t, t/parsefeed-atom-types.t,
-    t/poll.t, t/usermoves.t)
+    t/directorysearch-extra.t, t/directorysearch.t, t/poll.t, t/protocol.t,
+    t/usermoves.t)
 
-42. Install memcached, but make sure it doesn't run by default:
+43. Install memcached, but make sure it doesn't run by default:
 
 apt-get install memcached
 /etc/init.d/memcached stop
 update-rc.d -f memcached remove
 
-43. The code tour generator uses Python, so you'll need to install it:
+44. The code tour generator uses Python, so you'll need to install it:
 
 apt-get install python
 
-    You will also need to install the 'requests' module; this is most easily
-    done using pip:
+    You will also need to install the 'requests' module:
 
-pip requests
+apt-get install python-requests
 
-    If the above command doesn't work because you have a version of Python
-    before 2.7.9, you will need to install it, and *then* install 'requests':
-
-cd /root
-wget https://bootstrap.pypa.io/get-pip.py
-python get-pip.py
-pip requests
-
-44. Install more packages:
+45. Install more packages:
 
 # Miscellaneous must-haves
-apt-get install acct emacs joe mc mutt finger info openssh-blacklist openssl-blacklist perl-doc perltidy tcsh tofrodos traceroute zsh
+apt-get install acct emacs-nox joe mc mutt finger info openssh-blacklist openssl-blacklist perl-doc perltidy tcsh tofrodos traceroute zsh
 # To allow spell-checking on the Dreamhacks
 apt-get install aspell
 # Perl modules for the aux Dreamhack scripts:
-apt-get install libquota-perl libfile-temp-perl libpasswd-unix-perl libtext-csv-perl libipc-run3-perl
-cpan Text::CSV::Slurp
+apt-get install libquota-perl libpasswd-unix-perl libtext-csv-perl libipc-run3-perl
+cpanm Text::CSV::Slurp
 # Modules that some people on the server use for automated testing/formatting:
 apt-get install libperl-critic-perl libpod-coverage-perl libtest-pod-coverage-perl
 # Allow people to generate the (extremely old, LJ-based) documentation:
 apt-get install docbook-xml docbook-xsl xsltproc
 
-45. joe (installed above) sets itself as the default editor, so change it back to nano:
+46. joe (installed above) sets itself as the default editor, so change it back to nano:
 
 update-alternatives --config editor
 
-46. Copy the motd.tail file to /etc/motd.tail:
+47. Copy the motd file to /etc/motd:
 
-cp /dreamhack/setup/motd.tail /etc/motd.tail
+cp /dreamhack/setup/motd /etc/motd
 
-47. Move the extra MOTD information out of the way so that users don't see it:
+48. Move the extra MOTD information out of the way so that users don't see it:
 
 mkdir /etc/update-motd.d-old
 cd /etc/update-motd.d
-ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
+ls -1 {10,51,90,91,97,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
 
-    Make sure to leave 99-footer as it's the file that prints motd.tail.
-
-48. Reboot the server so that the MOTD is regenerated. Check that perlbal and
+49. Reboot the server so that the MOTD is regenerated. Check that perlbal and
     Apache still come back up after the reboot. (The Dreamhack you created
     won't, but that's fine; individual Dreamhacks don't get started back up.)
 
@@ -382,28 +412,37 @@ ls -1 {10,20,90,91,98}* | xargs -i mv /etc/update-motd.d{,-old}/{}
 iptables -t nat -L
 iptables -L
 
-49. Fix the permissions on /dreamhack/var/maintain.d so that everybody can
+50. Fix the permissions on /dreamhack/var/maintain.d so that everybody can
     write to it:
 
 chmod ugo+rwx /dreamhack/var/maintain.d
 
-50. Create a Dreamhack for yourself (if you plan to use one; if not, make a
+51. Create a Dreamhack for yourself (if you plan to use one; if not, make a
     test user) with dh-newuser. Log in and check that everything is fine.
 
-51. Import the root-crontab file:
+52. Import the root-crontab file:
 
 crontab /dreamhack/setup/root-crontab
 
-52. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
+53. Use 'visudo' to edit the /etc/sudoers file and make sure it has the
     following lines:
 
 Defaults	env_reset
 Defaults	lecture=always
 Defaults	lecture_file=/dreamhack/var/sudo-lecture
 
-53. Edit the /etc/ssh/sshd_config file to add the following line:
+54. Edit the /etc/ssh/sshd_config file to add the following line:
 
 AllowTcpForwarding no
+
+    While there, restrict SSHing to root so that it's only accessible from
+    127.0.0.1:
+
+    * Look for the "PermitRootLogin" line and change it to "PermitRootLogin no",
+    * At the very end of the file (required!), add:
+
+Match Address 127.0.0.1
+	PermitRootLogin prohibit-password
 
     Then, restart SSH:
 
