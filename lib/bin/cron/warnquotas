@@ -33,7 +33,7 @@ foreach my $user ($pu->users) {
                             to      => $user,
                             bcc     => 'sophie',
                           );
-  $msg->set("From", '"Sophie" <sophie@hack.dreamwidth.net>');
+  $msg->set("From", '"Sophie" <sophie@dreamwidth.org>');
   my $fh = $msg->open();
   my $hardm = sprintf("%.2f", ($hard * 1024 / 1048576));   # yes, I could do / 1024, but it's easier to understand this way.
   my $usedm = sprintf("%.2f", ($used * 1024 / 1048576));   # ditto.

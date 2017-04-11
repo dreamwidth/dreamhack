@@ -1,14 +1,16 @@
 Welcome to your Dreamhack installation!
 
-This Dreamhack service is provided by Sophie (<sophie@hack.dreamwidth.net>)
+This Dreamhack service is provided by Sophie (<sophie@dreamwidth.org>)
 and is available for general use. Preference will be given to those actively
 doing development work, but please don't let the word 'development' stop you;
 we have a healthy, nurturing community of people who are more than willing to
 give their time in order to help out newcomers. (See the 'Community' section
 below for more details.)
 
-(Notice for those who have read this README before: It has been updated
-recently for git and you may want to read it again.)
+(Notice for those who have read this README before: There have been updates for
+the new server, and you may want to read it again. In particular, you now need
+to connect to a different SSH server, "ssh-hack.dreamwidth.net"; more details
+are below.)
 
 Getting Started
 ===============
@@ -30,24 +32,36 @@ it's worth getting to know how to use it.
   * Windows users can use PuTTY, from this URL:
       http://www.chiark.greenend.org.uk/~sgtatham/putty/
 
-    You'll want to fill in the hostname as "hack.dreamwidth.net", then just
+    You'll want to fill in the hostname as "ssh-hack.dreamwidth.net", then just
     click Connect. (Alternatively, save it as a stored session for later.)
 
   * Linux and Mac OS X users will generally already have OpenSSH, which will
     allow you to connect. You can do this from the terminal; type the following
     command (replacing  'dh-username' with your actual username):
-      ssh dh-username@hack.dreamwidth.net
+      ssh dh-username@ssh-hack.dreamwidth.net
 
 To connect, use the username/password combination from your initial email. (If
-you're reading this from the email itself, these details are above.)
+you're reading this from the email itself, these details are above.) Please be
+aware that while your Dreamhack URL is at "hack.dreamwidth.net", you will need
+to SSH to "ssh-hack.dreamwidth.net".
 
 The first time you connect, your client will tell you that it doesn't have the
 host key in its cache. Check to make sure that the key fingerprint it lists is
-the same as below, and if so, feel free to continue. (Generally this will
-involve clicking or typing "Yes" at the prompt.) If the host key doesn't match,
-please contact Sophie at <sophie@hack.dreamwidth.net>.
+the same as any one of the lines below, and if so, feel free to continue.
+(Generally this will involve clicking or typing "Yes" at the prompt.) If the
+host key doesn't match, please contact Sophie at <sophie@dreamwidth.org>.
 
-  * Host key (RSA): ed:e2:9d:86:4b:8e:a5:a9:ed:12:fc:ed:16:73:bd:c7
+  * ECDSA:
+      SHA256: TAtO07wp/zu1L4lIoYPnJh9pficQUcBsl9aqZiEM6UE
+         MD5: 73:10:37:bc:47:4b:24:dc:50:5f:7e:af:f7:b4:a0:b6
+
+  * RSA:
+      SHA256: jU9iFXflDW/FMRAFDaR0HMZ3zwsNxBa333A4Pl7ys1w
+         MD5: 29:18:e9:63:c5:b5:79:5c:bd:d6:3b:63:ce:7a:83:85
+
+  * ED25519:
+      SHA256: mxpvqf1GWXHNpcnyPFXFJ0OcdqcIDlXlpT/Za/2i1Fg
+         MD5: fd:76:e0:33:91:8f:e2:5d:7f:3f:b6:a3:e4:75:a3:18
 
 When you log in for the first time, you will be reminded to create the
 password for the 'system' user. This can be done by running the following
@@ -63,7 +77,7 @@ Maintenance
 The Dreamhack installation that is installed is up-to-date at the time of
 setup, but if you wish to keep it up-to-date you will need to do so yourself.
 Instructions on doing so can be found at:
-  http://wiki.dwscoalition.org/wiki/index.php/Dev_Maintenance
+  http://wiki.dreamwidth.net/wiki/index.php/Dev_Maintenance
 
 Although your Dreamhack is ready to run, you may be interested in editing
 the $LJHOME/ext/local/etc/config-local.pl file in order to further customize
@@ -90,23 +104,23 @@ resources on our wiki that you might find useful:
       This is an overview for beginning developers that starts at the *very*
       beginning, which may be useful to some people.
 
-  * http://wiki.dwscoalition.org/wiki/index.php/Development
+  * http://wiki.dreamwidth.net/wiki/index.php/Development
       An overview of development topics.
 
-  * http://wiki.dwscoalition.org/wiki/index.php/Dev_Getting_Started
+  * http://wiki.dreamwidth.net/wiki/index.php/Dev_Getting_Started
       An overview of getting started.
 
-  * http://wiki.dwscoalition.org/wiki/index.php/Version_Control
+  * http://wiki.dreamwidth.net/wiki/index.php/Version_Control
       A brief overview of how to use git, the versioning system we use. This
       also includes information on how to make a pull request on GitHub so that
       your changes can be committed.
 
-  * http://wiki.dwscoalition.org/wiki/index.php/Bugzilla
-      An overview of the Bugzilla ticket system, including links to useful
-      searches.
+  * http://wiki.dreamwidth.net/wiki/index.php/Github_Issues
+      An overview of the Issues system on GitHub, with step-by-step guides for
+      how to report and work on bugs.
 
 Other articles can be found at this URL:
-  http://wiki.dwscoalition.org/wiki/index.php/Category:Development
+  http://wiki.dreamwidth.net/wiki/index.php/Category:Development
 
 Submitting your Changes
 =======================
@@ -117,12 +131,12 @@ dw-free/dw-nonfree forks set as the origin, so you simply need to push your
 changes and then hop onto the GitHub website and send a pull request.
 
 The process for doing this can be found on the wiki:
-  http://wiki.dwscoalition.org/wiki/index.php/Version_Control
+  http://wiki.dreamwidth.net/wiki/index.php/Version_Control
 
 Note that you will need a Contributor Licensing Agreement (CLA) on file with
 Dreamwidth Studios, LLC before your changes can be accepted into the codebase.
 More information on CLAs can be found on the wiki:
-  http://wiki.dwscoalition.org/wiki/index.php/Contributor_Licensing_Agreement
+  http://wiki.dreamwidth.net/wiki/index.php/Contributor_Licensing_Agreement
 
 Community
 =========
@@ -131,7 +145,7 @@ There is a thriving community of Dreamwidth pioneers, including coders,
 designers, testers, and others; most of us live on IRC at irc.freenode.net,
 on the #dreamwidth channel. If you have a query or concern, you can often get
 an answer in real-time here. (If you're not sure how to join us, take a look
-at http://wiki.dwscoalition.org/wiki/index.php/IRC_help .)
+at http://wiki.dreamwidth.net/wiki/index.php/IRC_help .)
 
 There is also a sister channel, #dreamwidth-dev, specifically for developers.
 You'll never be derided for anything in either channel, so don't worry that
@@ -169,9 +183,9 @@ home directory:
 
       You will likely never have to change your Apache configuration, but if
       you find it to be necessary, please contact Sophie via either email
-      (<sophie@hack.dreamwidth.net>), IRC or the "dw_dev" Dreamwidth community
-      first in order to make sure that your changes are reflected in the
-      generic configration, if necessary.
+      (<sophie@dreamwidth.org>), IRC or the "dw_dev" Dreamwidth community first
+      in order to make sure that your changes are reflected in the generic
+      configration, if necessary.
 
   * bin/
       This directory is the first entry in your PATH environment variable, and
@@ -182,7 +196,7 @@ home directory:
 
       If you need more scripts in your PATH, this is the place to add them. A
       selection of scripts can be found at:
-        http://wiki.dwscoalition.org/wiki/index.php/Dev_Maintenance#Scripting
+        http://wiki.dreamwidth.net/wiki/index.php/Dev_Maintenance#Scripting
 
   * dw/
       This is where your Dreamhack installation lives, and is the target of the
@@ -205,6 +219,6 @@ Epilogue
 
 Hopefully, this should be all the information you need to get started. Should
 you need any more information, please feel free to contact me at
-<sophie@hack.dreamwidth.net>, or find me on #dreamwidth IRC as "Sophira".
+<sophie@dreamwidth.org>, or find me on #dreamwidth IRC as "Sophira".
 
  - Sophie.

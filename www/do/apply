@@ -44,9 +44,9 @@ else {
     # just send this in an email
     my $msg = new Mail::Send(
                               subject => "Dreamhack application: " . param("username"),
-                              to      => 'sophie',
+                              to      => 'sophie',   # this gets sent to the local user 'sophie', and forwarded via ~/.forward
                             );
-    $msg->set("From", '"Dreamhack" <sophie@hack.dreamwidth.net>');
+    $msg->set("From", '"Dreamhack" <sophie@dreamwidth.org>');
     my $fh = $msg->open();
     print $fh <<MSG;
   A new Dreamhack application has been filed.

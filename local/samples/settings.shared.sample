@@ -5,7 +5,7 @@
 dh_service_name="Dreamhack"
 
 dh_domain="hack.dreamwidth.net"
-dh_domain_ssh="hack.dreamwidth.net"
+dh_domain_ssh="ssh-hack.dreamwidth.net"
 
 dh_from_email_address="dreamhack@example.com"
 dh_maintainer="The Dreamhack Maintainer"

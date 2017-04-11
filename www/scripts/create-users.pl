@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # alter these variables to alter the characteristics of the created accounts
-my $email     = 'dh-sophie@hack.dreamwidth.net';
+my $email     = 'youremail@example.invalid';
 my $password  = "testpass1";
 my $validated = 1;   # validate new accounts automatically? (no email will be sent in either case)
 

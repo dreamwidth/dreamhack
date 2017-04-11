@@ -139,7 +139,7 @@ else {
 <body>
 <h2>Resolved issues from $fromdate to $dtodate</h2>
 <hr>
-<p>Copy and paste the following into a text editor, and then use <a href="http://wiki.dwscoalition.org/notes/How_to_do_a_Code_Tour">the wiki guide</a> to make the code tour. There may be duplicates between this code tour and the last one near the top; you may need to remove them manually. The 'category' field on each issue is set to the milestone if there is one, but for the vast majority this will not be filled in - please edit it if this is the case!</p>
+<p>Copy and paste the following into a text editor, and then use <a href="http://wiki.dreamwidth.net/notes/How_to_do_a_Code_Tour">the wiki guide</a> to make the code tour. There may be duplicates between this code tour and the last one near the top; you may need to remove them manually. The 'category' field on each issue is set to the milestone if there is one, but for the vast majority this will not be filled in - please edit it if this is the case!</p>
 <textarea rows="20" cols="120">$doutput</textarea>
 <p>After you're done editing in your external text editor, <a href="http://www.dreamwidth.org/update?usejournal=dw_dev">open a window to post it in dw_dev</a>.</p>
 </body>

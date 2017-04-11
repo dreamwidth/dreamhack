@@ -4,5 +4,5 @@
           <h2>Error Sending Application - NOT SENT</h2>
           <p>A problem was encountered while trying to email your application. This isn't
           your fault. Please try using another browser to submit your application, or
-          <a href="mailto:sophie@hack.dreamwidth.net">tell Sophie about this error</a>.</p>
+          <a href="mailto:sophie@dreamwidth.org">tell Sophie about this error</a>.</p>
 <!--#include virtual="/_footer.html" -->
