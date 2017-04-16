@@ -3,7 +3,6 @@
 # this script is designed to be run and then the text of the email sent by the application form given via stdin
 # (that is, just a straight copy-and-paste from the email client)
 # It will then run the appropriate commands for you if wanted
-# NOTE: This version of the script requires an additional 'gitname' field at the bottom which isn't currently sent via the application form
 
 my $port = `"ls" -1 /dreamhack/home | sed -e 's/-/ /' | awk '{ print \$1 }' | sort -n | tail -1`;
 $port++;
@@ -13,10 +12,10 @@ my @cmds = ();
 
 my %dat;
 while (<>) {
-	if ( /^(\w+): (.+?)$/ ) {
+	if ( /^(\w+): ?(.*?)$/ ) {
 		if ( $1 eq 'username' ) {
 			%dat = ( username => lc($2) );
-		} elsif ( $1 eq 'gitname' ) {
+		} elsif ( $1 eq 'notes' ) {
 			$dat{$1} = $2;
 
 			die "$dat{username} username invalid\n" unless $dat{username} =~ /^[\w\d\-]+$/;
@@ -30,10 +29,10 @@ while (<>) {
 
 			$dat{ljname} = lc($dat{ljname}) || '-';
 			$dat{dwname} = lc($dat{dwname}) || '-';
-			$dat{gitname}  ||= '-';
+			$dat{ghname}   ||= '-';
 			$dat{prefname} ||= 'Unknown User';
 
-			push(@cmds, qq{dh-newuser $dat{username} $port "$dat{email}" "$dat{prefname}" $dat{gitname} $dat{ljname} $dat{dwname}});
+			push(@cmds, qq{dh-newuser $dat{username} $port "$dat{email}" "$dat{prefname}" $dat{ghname} $dat{ljname} $dat{dwname}});
 			$port++;
 		} else {
 			$dat{$1} = $2;
