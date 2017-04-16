@@ -124,3 +124,10 @@ span.dwuser img {
 #menu ul li a:hover {
   background-image: url("/img/tropo-red/icon_menu_swirl_dropdown.png");
 }
+
+img.explanatory-image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid grey;
+}
