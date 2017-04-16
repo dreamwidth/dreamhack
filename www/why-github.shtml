@@ -1,0 +1,40 @@
+<!--#set var="title" value="Why do you need a GitHub username?" -->
+<!--#include virtual="/_header.shtml" -->
+          <h1>Why do you need a GitHub username?</h1>
+          <p>As Dreamwidth is a free/open-source project, we need somewhere to put the source code
+          so that other people (you!) can work with it. We've chosen to use <a
+          href="https://github.com/">GitHub</a> for this, in line with most current projects like
+          ours.</p>
+
+          <p>As we use GitHub's issue tracker for submitting changes to the source code, we've found
+          that it's easiest for everybody if developers wanting to make changes to the code have a
+          GitHub account, and have the two main repositories - <strong><a
+          href="https://github.com/dreamwidth/dw-free/">dw-free</a></strong> and <strong><a
+          href="https://github.com/dreamwidth/dw-nonfree/">dw-nonfree</a></strong> - "forked".
+          (Forking a repository on GitHub means that you have your own copy of the code to work
+          with.)</p>
+
+          <p>Forking the two repositories is easy. First, <a href="https://github.com/join">sign up
+          for a free GitHub account</a> (if you don't already have one). Then, follow each of the
+          two repository links in the previous paragraph and, for each one, click the "Fork" button
+          in the header at the top right, next to the "Watch" (or "Unwatch") and "Star" buttons:</p>
+
+	  <p><img class="explanatory-image" id="fork-location" src="github-fork-location.png" width="455" height="181" alt="An
+image of the GitHub user interface, cropped to the top-right corner of a
+repository page. The top header bar shows a 'Gist' link at the top-left of the
+cropped image, and in the top-right are: a bell icon with a blue circle, a plus
+sign with a down arrow next to it, and a user picture with a down arrow next to
+it. Below these are three buttons with numbers next to them: 'Unwatch', 'Star'
+and 'Fork'. The 'Fork' button is circled in red."></p>
+
+          <p>After doing this for both <strong>dw-free</strong> and <strong>dw-nonfree</strong>, you
+          will have your own copy of the code and can apply for a Dreamhack by <a
+          href="/apply.shtml">using the application form</a>. As part of the Dreamhack setup
+          process, we'll download your copy of the code and set it up in your own area, so that you
+          can work on the code safely.</p>
+
+          <p>That's pretty much it! If you're ready to continue and have a GitHub account with both
+          repositories forked, you can <strong><a href="/apply.shtml">move on to the application
+          form</a></strong>. If you still need help, go ahead and submit an application anyway; I'll
+          get in touch and answer any questions you may have or help you with whatever you need.</p>
+<!--#include virtual="/_footer.html" -->

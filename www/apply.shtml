@@ -5,14 +5,22 @@
           your application to be processed. The username, preferred name and DW/LJ/IRC name
           fields will appear publicly on the <a href="/dreamhacks.shtml">Dreamhacks</a> page.</p>
 
+          <p>As we use <a href="https://github.com/">GitHub</a> for our development process, you'll
+          need a GitHub account with the
+          <a href="https://github.com/dreamwidth/dw-free/">dw-free</a> and
+          <a href="https://github.com/dreamwidth/dw-nonfree/">dw-nonfree</a>
+          repositories forked before a Dreamhack can be made for you.
+          <strong><a href="/why-github.shtml">More information about GitHub can be found here</a></strong>.</p>
+
           <form method="post" action="/do/apply">
           <table id="application-form">
-          <tr><th>Your desired username:</th><td>http://www.<input type="text" name="username" size="15" maxlength="13">.hack.dreamwidth.net/<br><p class="small">(your SSH username will be the same, but with the characters <b>dh-</b> appended to the beginning.)</p></td></tr>
-          <tr><th>Your DW username (if you have one):</th><td><input type="text" name="dwname" size="25" class="dwuser stretch"></td></tr>
-          <tr><th>Your LJ username (if you have one):</th><td><input type="text" name="ljname" size="15" class="ljuser stretch"></td></tr>
-          <tr><th>Your IRC name (if you use it):</th><td><input type="text" name="ircname" size="25" class="stretch"></td></tr>
-          <tr><th>Your preferred name:</th><td><input type="text" name="prefname" size="30" class="stretch"></td></tr>
-          <tr><th>Your email address:</th><td><input type="text" name="email" size="30" class="stretch"></td></tr>
+          <tr><th><label for="username">Your desired username:</label></th><td>http://www.<input type="text" id="username" name="username" size="15" maxlength="13">.hack.dreamwidth.net/<br><p class="small">(your SSH username will be the same, but with the characters <b>dh-</b> appended to the beginning.)</p></td></tr>
+          <tr><th><label for="dwname">Your DW username (if you have one):</label></th><td><input type="text" id="dwname" name="dwname" size="25" class="dwuser stretch"></td></tr>
+          <tr><th><label for="ljname">Your LJ username (if you have one):</label></th><td><input type="text" id="ljname" name="ljname" size="15" class="ljuser stretch"></td></tr>
+          <tr><th><label for="ghname">Your GitHub username:</label></th><td><input type="text" id="ghname" name="ghname" size="25" class="stretch"> (<a href="/why-github.shtml">why do I need a GitHub username?</a>)</td></tr>
+          <tr><th><label for="ircname">Your IRC name (if you use it):</label></th><td><input type="text" id="ircname" name="ircname" size="25" class="stretch"></td></tr>
+          <tr><th><label for="prefname">Your preferred name:</label></th><td><input type="text" id="prefname" name="prefname" size="30" class="stretch"></td></tr>
+          <tr><th><label for="email">Your email address:</label></th><td><input type="text" id="email" name="email" size="30" class="stretch"></td></tr>
           <tr><th>Your main purposes for a Dreamhack:</th><td>
             <input type="checkbox" name="purpose-coding" value="1" id="purpose-coding"> <label for="purpose-coding">Coding</label><br>
             <input type="checkbox" name="purpose-designing" value="1" id="purpose-designing"> <label for="purpose-designing">Designing</label><br>
@@ -20,7 +28,7 @@
             <input type="checkbox" name="purpose-other" value="1" id="purpose-other"> <label for="purpose-other">Other</label><br>
             <input type="checkbox" name="purpose-unsure" value="1" id="purpose-unsure"> <label for="purpose-unsure">Unsure</label>
           </td></tr>
-          <tr><th>Any other notes:</th><td><textarea name="notes" rows="3" cols="50"></textarea></td></tr>
+          <tr><th><label for="notes">Any other notes:</label></th><td><textarea id="notes" name="notes" rows="3" cols="50"></textarea></td></tr>
           <tr><td></td><td><input type="submit" value="Submit"></td></tr>
           </table>
           </form>
