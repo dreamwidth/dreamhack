@@ -32,7 +32,7 @@ while (<>) {
 			$dat{ghname}   ||= '-';
 			$dat{prefname} ||= 'Unknown User';
 
-			push(@cmds, qq{dh-newuser $dat{username} $port "$dat{email}" "$dat{prefname}" $dat{ghname} $dat{ljname} $dat{dwname}});
+			push(@cmds, qq{dh-newuser --wait-for-input $dat{username} $port "$dat{email}" "$dat{prefname}" $dat{ghname} $dat{ljname} $dat{dwname}});
 			$port++;
 		} else {
 			$dat{$1} = $2;
@@ -42,11 +42,5 @@ while (<>) {
 
 foreach my $cmd (@cmds) {
 	print "  $cmd\n";
-	print "Execute this command? [Y/n]\n";
-	my $input = <STDIN>;
-	chomp($input);
-	$input = lc($input);
-	if ($input ne "n" && $input ne "no") {
-		system($cmd);
-	}
+	system($cmd);
 }
