@@ -55,13 +55,15 @@ DELETE=0
 SENDEMAIL=1
 COPYDHROOT=0
 GHCHECK=1
+WAITFORINPUT=0
 
 while [[ "$1" =~ ^-- ]]; do
-    if [ "$1" == "--delete" ];      then DELETE=1;
-  elif [ "$1" == "--no-email" ];    then SENDEMAIL=0;
-  elif [ "$1" == "--copy-dhroot" ]; then COPYDHROOT=1;
-  elif [ "$1" == "--no-gh-check" ]; then GHCHECK=0;   # this is for the Daily Snapshot so we don't make needless GitHub checks
-  elif [ "$1" == "--no-nonfree" ];  then NONFREE=0;
+    if [ "$1" == "--delete" ];         then DELETE=1;
+  elif [ "$1" == "--no-email" ];       then SENDEMAIL=0;
+  elif [ "$1" == "--copy-dhroot" ];    then COPYDHROOT=1;
+  elif [ "$1" == "--no-gh-check" ];    then GHCHECK=0;   # this is for the Daily Snapshot so we don't make needless GitHub checks
+  elif [ "$1" == "--no-nonfree" ];     then NONFREE=0;
+  elif [ "$1" == "--wait-for-input" ]; then WAITFORINPUT=1;
   else
     echo "Switch '$1' not recognised"
     exit 1
@@ -113,8 +115,14 @@ if [ "$DELETE" == "1" ]; then
     FORCE=1
   fi
 
-  echo "Deleting this user in 10 seconds... (Ctrl-C to abort)"
-  sleep 10
+  if [ "$WAITFORINPUT" == "1" ]; then
+    echo "Will delete this user when you press RETURN. (Ctrl-C to abort)"
+    echo -n "> "
+    read DUMMY
+  else
+    echo "Deleting this user in 10 seconds... (Ctrl-C to abort)"
+    sleep 10
+  fi
 
   echo "Begin delete process:"
   # kill their apache process, if any
@@ -275,8 +283,14 @@ if [ ! -f "$CHECKFILE" ]; then
 fi
 
 echo "This user will be '$UNIXUSER' and their home directory will be $UHOME"
-echo "About to set up this user... hit Ctrl-C in the next 10 seconds to abort."
-sleep 10
+if [ "$WAITFORINPUT" == "1" ]; then
+  echo "Will set up this user when you press RETURN. (Ctrl-C to abort)"
+  echo -n "> "
+  read DUMMY
+else
+  echo "About to set up this user... hit Ctrl-C in the next 10 seconds to abort."
+  sleep 10
+fi
 echo -n "Continuing. Time now: "
 date
 
@@ -604,6 +618,8 @@ echo -n "All done! Finished at: "
 date
 
 if [ "$SENDEMAIL" == "1" ]; then
+  echo "About to send email, waiting 2 seconds in case of Ctrl-C..."
+  sleep 2
   echo "Sending email..."
   EMAILMSG="Hi $PREFNAME!
 
