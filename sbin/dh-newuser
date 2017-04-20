@@ -618,6 +618,8 @@ echo -n "All done! Finished at: "
 date
 
 if [ "$SENDEMAIL" == "1" ]; then
+  echo "About to send email, waiting 2 seconds in case of Ctrl-C..."
+  sleep 2
   echo "Sending email..."
   EMAILMSG="Hi $PREFNAME!
 

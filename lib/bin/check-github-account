@@ -36,6 +36,6 @@ foreach my $repo (@repos) {
     print STDERR "exists, but isn't owned by $canon :(\n";
     exit 3;
   }
-  print STDERR "exists :D\n";
+  print STDERR "exists :D (last updated: " . $r->{'updated_at'} . ")\n";
 }
 print $canon;
