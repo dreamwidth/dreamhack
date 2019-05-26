@@ -264,12 +264,12 @@ apt-get install mercurial subversion
 30. Create a user for Dreamhack applications to go to if you haven't already.
     For example:
 
-useradd -m sophie
+useradd -m mark
 
     Create a .forward file in their home directory, chown it to them, and point
     it to an appropriate email address.
 
-31. If necessary, replace all instances of 'sophie' with the correct username
+31. If necessary, replace all instances of 'mark' with the correct username
     in /dreamhack/lib, /dreamhack/sbin and /dreamhack/www/do. (There are
     numerous other places where you'll also want to change my name!)
 

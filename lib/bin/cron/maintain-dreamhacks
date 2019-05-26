@@ -168,8 +168,8 @@ MESSAGE
         return makeError($username, "Could not fetch the necessary information from the database for a reinstall.", "Your Dreamhack could not be rebuilt", <<MESSAGE);
 There was a problem retrieving the necessary information from the database
 needed to rebuild your Dreamhack. As a result, your account has not been
-changed. Please contact Sophie <sophie\@hack.dreamwidth.net> and ask for
-a manual delete/reinstall.
+changed. Please contact a Dreamhack admin and ask for a manual
+delete/reinstall.
 MESSAGE
       }
 
@@ -198,7 +198,7 @@ MESSAGE
 There was a problem deleting your existing account. You may not be able to log
 back in.
 
-Please contact Sophie <sophie\@hack.dreamwidth.net> for more help, and ask for
+Please contact a Dreamhack admin for more help, and ask for
 a manual delete/reinstall.
 MESSAGE
         }
@@ -226,7 +226,7 @@ MESSAGE
 There was a problem creating your new account. You may not be able to log back
 in.
 
-Please contact Sophie <sophie\@hack.dreamwidth.net> for more help, and ask for
+Please contact a Dreamhack admin for more help, and ask for
 a manual delete/reinstall.
 MESSAGE
       }
@@ -293,9 +293,9 @@ PARA
       my $msg = new Mail::Send(
                                 subject => "Your Dreamhack has been rebuilt!",
                                 to      => $username,
-                                bcc     => 'sophie',
+                                bcc     => 'mark',
                               );
-      $msg->set("From", '"Sophie" <sophie@dreamwidth.org>');
+      $msg->set("From", '"Dreamhack Admins" <mark@dreamwidth.org>');
       my $fh = $msg->open();
       print $fh <<MESSAGE;
 [this is an automatic message]
@@ -317,7 +317,7 @@ any changes that you may need to be aware of.
 
 Thank you!
 
-- Sophie.
+- the Dreamhack admins
 MESSAGE
       $fh->close();
     }
@@ -332,8 +332,7 @@ MESSAGE
       return makeError($username, "Error when getting github_username from database: sth->rows != 1", "Your Dreamhack could not be rebuilt", <<MESSAGE);
 A request to reinstall your Dreamhack was received, but an error occurred while
 trying to get your GitHub username from the database. Your account has not been
-changed. Please let Sophie know about this by emailing
-<sophie\@hack.dreamwidth.net>. Thank you.
+changed. Please let the Dreamhack admins know about this!
 MESSAGE
     }
     my ($ghname) = $sth->fetchrow_array();
@@ -403,8 +402,8 @@ the database by running the following command on the Dreamhack server:
 
 Edit the 'github_username' field so that it contains your GitHub username, and
 then save and exit. Wait 1-2 minutes for the update to be processed, and then
-try reinstalling again. If the problem persists, please contact Sophie at
-<sophie\@hack.dreamwidth.net> and let her know - thank you.
+try reinstalling again. If the problem persists, please contact a Dreamhack
+admin and let us know!
 MESSAGE
   }
   # check the GitHub account for the dw-free and dw-nonfree repos
@@ -419,7 +418,7 @@ check that the value of 'github_username' is correct, and edit it if needed:
 
 If the GitHub username is correct, there may have been an error communicating
 with GitHub - please try again in a few minutes. If the problem persists,
-please contact Sophie at <sophie\@hack.dreamwidth.net> and let her know - thank
+please contact a Dreamhack admin and let us know - thank
 you.
 MESSAGE
   }
@@ -435,8 +434,7 @@ Dreamhack server to correct it:
 If you have forked the 'dw-free' and 'dw-nonfree' repositories on your GitHub
 account and this GitHub username is correct, there may have been an error
 communicating with GitHub - please try again in a few minutes. If the problem
-persists, please contact Sophie at <sophie\@hack.dreamwidth.net> and let her
-know - thank you.
+persists, please contact a Dreamhack admin and let us know. 
 MESSAGE
   }
   elsif ($result == 3) {
@@ -445,8 +443,8 @@ ${premessage}Your Dreamhack could not be rebuilt because there was a problem che
 GitHub account '$ghname' for the 'dw-free' and 'dw-nonfree' repositories. You
 need to fork the repositories onto your account, otherwise you will not be able
 to push your changes own repositories.  After you have done so, try the
-reinstallation process again. If the problem persists, please contact Sophie at
-<sophie\@hack.dreamwidth.net> and let her know - thank you.
+reinstallation process again. If the problem persists, please contact a
+Dreamhack admin and let us know.
 MESSAGE
   }
   elsif ($result == -1) {
@@ -455,9 +453,9 @@ ${premessage}Your Dreamhack could not be rebuilt because there was a unknown err
 checking your GitHub account. Don't worry, it's not your fault! Your account
 has not been changed.
 
-An error report has been sent to Sophie, who may contact you to try to work out
+An error report has been sent to the admins, who may contact you to try to work out
 what went wrong. In the meantime, if you want, you may request a manual
-reinstall by contacting Sophie at <sophie\@hack.dreamwidth.net>.
+reinstall by contacting a Dreamhack admin.
 MESSAGE
   }
   else {
@@ -530,7 +528,7 @@ sub cmdEditDreamhackInfo {
     my $sth = $dbh->prepare("UPDATE `users` SET " . join(", ", @sql) . " WHERE `ssh_username` = ?") || ($dberror = 1);
     $sth->execute(@sqlargs, $username) || ($dberror = 1);
     if ($dberror) {
-      push(@humanerrs, "An error occurred while trying to update the database. Please contact Sophie.");
+      push(@humanerrs, "An error occurred while trying to update the database. Please contact an admin.");
     }
     elsif (defined($newprefname)) {
       gecos($username, $newprefname);
@@ -562,7 +560,7 @@ sub cmdSetVersion {
     return makeError($username, "Target version for $username is not a number: '$ver'", "Could not set version number in database", <<MSG);
 The automatic maintainer script could not update your version number in the
 database as the version number '$ver' is not a number. If you weren't
-expecting this, please let Sophie <sophie\@hack.dreamwidth.net> know.
+expecting this, please let a Dreamhack admin know.
 MSG
   }
   require '/dreamhack/lib/dreamhacks-db.pl';
@@ -572,7 +570,7 @@ MSG
     return makeError($username, "Target version for $username is not a number: '$ver'", "Could not set version number in database", <<MSG);
 The automatic maintainer script could not update your version number in the
 database as the version number '$ver' is not a number. If you weren't
-expecting this, please let Sophie <sophie\@hack.dreamwidth.net> know.
+expecting this, please let a Dreamhack admin know.
 MSG
   }
   my $output = join("\n", @output);
@@ -597,8 +595,7 @@ sub cmdSendMigration {
       if ($sth->rows == 0) {
         return makeError($username, "SSH username '$username' is not listed in database???", "Unable to start migration process", <<BODY);
 For some reason, your Dreamhack account is not listed in the Dreamhacks
-database. As a result, migration cannot start. Please contact Sophie at
-<sophie\@hack.dreamwidth.net> and let her know of this error.
+database. As a result, migration cannot start. Please contact an admin!
 BODY
       }
       my ($dbname, $migrated) = $sth->fetchrow_array();
@@ -608,8 +605,7 @@ You requested to start the migration process, but according to the database,
 your account has already been migrated.
 
 If the migration had an error, or if you wish to restore the backup of your
-account from the old server, please email Sophie at
-<sophie\@hack.dreamwidth.net> and let her know. Thank you.
+account from the old server, please contact an admin!
 BODY
       }
 
@@ -663,11 +659,11 @@ MESSAGE
         passwd($username, $password);   # make sure they can log back in
         return makeError($username, "An error occurred during migration-send - see cron email", "Your Dreamhack could not be migrated", <<MESSAGE, 1);
 An error occurred while sending your account to the new server. An error report
-has been sent to Sophie. You should be able to continue working on the old
+has been sent to the admins. You should be able to continue working on the old
 server for now.
 
-If you don't hear from Sophie in about 12 hours of this message, please reply
-to this message and let her know, as she may have missed the error report.
+If you don't hear from us in a while after of this message, please reply
+to this message and let us know, as she may have missed the error report.
 MESSAGE
       }
       else {
@@ -766,7 +762,7 @@ the old server when it is taken down. To assist with this, a file named
 use this to see if you are on the old server.
 
 Please wait for an email from the new server. If you do not receive one within
-the next 15 minutes, please reply to this email and let Sophie know. Thank you!
+the next 15 minutes, please reply to this email and let us know. Thank you!
 
  -- The migration scripts.
 MESSAGE
@@ -781,8 +777,8 @@ MESSAGE
     if ($sth->rows == 0) {
       return makeError($username, "SSH username '$username' is not listed in database???", "Unable to start migration process", <<BODY);
 For some reason, your Dreamhack account is not listed in the Dreamhacks
-database. As a result, migration cannot start. Please contact Sophie at
-<sophie\@hack.dreamwidth.net> and let her know of this error.
+database. As a result, migration cannot start. Please contact an admin
+and let us know!
 BODY
     }
     my ($dbname, $migrated) = $sth->fetchrow_array();
@@ -792,8 +788,7 @@ You requested to start the migration process, but according to the database,
 your account has already been migrated.
 
 If the migration had an error, or if you wish to restore the backup of your
-account from the old server, please email Sophie at
-<sophie\@hack.dreamwidth.net> and let her know. Thank you.
+account from the old server, please email an admin!
 BODY
     }
     push(@newcommands, "send-migration --immediate " . time());
@@ -817,8 +812,7 @@ transferred, and another one from the new server when it has been set up.
 All your data will be transferred, and in case of any problems, your account on
 the old server will also remain active, although you will be unable to use
 Apache with it. Should any problems occur during migration, an error report
-will be sent to Sophie and you should receive an email from her. (If you don't,
-feel free to email her yourself at <sophie\@hack.dreamwidth.net>.)
+will be sent to an admin and you should receive an email back.
 MESSAGE
     close(PIPE);
     push(@output, "Queued migration for $username.");
@@ -876,14 +870,8 @@ BODY
 Hello $config{'preferred_name'},
 
 Unfortunately, the migration of your Dreamhack appears to have failed. An error
-report has been sent to Sophie, who will try to work things out and contact you
+report has been sent to an admin, who will try to work things out and contact you
 with more information.
-
-Sorry for the inconvenience! She did test the scripts before making them
-available, but obviously something has gone wrong that she didn't expect. If
-you don't hear from her soon - in the next 12 hours or so - please email her at
-<sophie\@hack.dreamwidth.net> (or reply to this email) and let her know about
-this problem, as she may have missed the email.
 
 Unfortunately, due to the way the migration works, you will probably not be
 able to do any more testing with Apache until the problem is fixed, even on the
@@ -929,7 +917,7 @@ I'll get it on for you as soon as possible.
 
 Thank you, and take care!
 
- - Sophie.
+ - the Dreamhack Admins
 BODY
     return ("Migration completed successfully!")
     }
@@ -967,9 +955,9 @@ sub sendEmail {
   my $newmsg = new Mail::Send(
                                subject => $subject,
                                to      => $emailaddr,
-                               bcc     => 'sophie',
+                               bcc     => 'mark',
                              );
-  $newmsg->set("From", '"Sophie" <sophie@dreamwidth.org>');
+  $newmsg->set("From", '"Dreamhack Admins" <mark@dreamwidth.org>');
   my $fh = $newmsg->open();
   print $fh $body;
   $fh->close();

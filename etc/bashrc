@@ -1,1 +1,3 @@
-source /dreamhack/etc/completion/git-completion.bash
+if [ ! -f "$HOME/.no-git-completion" ]; then
+	source /dreamhack/etc/completion/git-completion.bash
+fi

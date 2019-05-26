@@ -31,9 +31,9 @@ foreach my $user ($pu->users) {
   my $msg = new Mail::Send(
                             subject => "hack.dreamwidth.net quota warning ($usedp% used)",
                             to      => $user,
-                            bcc     => 'sophie',
+                            bcc     => 'mark',
                           );
-  $msg->set("From", '"Sophie" <sophie@dreamwidth.org>');
+  $msg->set("From", '"Dreamhack Admins" <mark@dreamwidth.org>');
   my $fh = $msg->open();
   my $hardm = sprintf("%.2f", ($hard * 1024 / 1048576));   # yes, I could do / 1024, but it's easier to understand this way.
   my $usedm = sprintf("%.2f", ($used * 1024 / 1048576));   # ditto.
@@ -66,7 +66,7 @@ As a reminder, your username on hack.dreamwidth.net is $user.
 Thanks! And again, if you need more quota, just let me know by replying
 to this message.
 
- - Sophie.
+ - the Dreamhack Admins
 MSG
   $fh->close();
 }

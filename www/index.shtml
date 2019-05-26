@@ -26,7 +26,9 @@
           and so on.</p>
 
           <h2>Who runs this service?</h2>
-          <p>This service is currently run by <span style='white-space: nowrap;'><a href='https://sophie.dreamwidth.org/profile'><img src='https://www.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='https://sophie.dreamwidth.org/'><b>sophie</b></a></span>. For more information, visit <a href="/maintainers.shtml">the Maintainers page</a>.</p>
+          <p>This service is currently run by <span style='white-space: nowrap;'><a href='https://mark.dreamwidth.org/profile'><img src='https://www.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='https://mark.dreamwidth.org/'><b>mark</b></a></span>. For more information, visit <a href="/maintainers.shtml">the Maintainers page</a>.</p>
+
+	  <p>The Dreamhack service was built and maintained for many years by <span style='white-space: nowrap;'><a href='https://sophie.dreamwidth.org/profile'><img src='https://www.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='https://sophie.dreamwidth.org/'><b>sophie</b></a></span>. Thank you!</p>
 
           <h2>How can I apply for a Dreamhack?</h2>
           <p>Go to <a href="/apply.shtml">the Apply page</a> and fill in the application form.</p>

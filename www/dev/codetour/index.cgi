@@ -158,7 +158,7 @@ HTML
 <hr>
 <p>The Python generator returned an error:</p>
 <pre>$derrors</pre>
-<p>You may want to try again, or else <a href="https://github.com/dreamwidth/dw-free/issues">manually do the code tour</a>. Also, poke <span style='white-space: nowrap;'><a href='http://sophie.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://sophie.dreamwidth.org/'><b>sophie</b></a></span> about this.</p>
+<p>You may want to try again, or else <a href="https://github.com/dreamwidth/dw-free/issues">manually do the code tour</a>. Also, poke <span style='white-space: nowrap;'><a href='http://mark.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://mark.dreamwidth.org/'><b>mark</b></a></span> about this.</p>
 </body>
 </html>
 HTML

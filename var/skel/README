@@ -1,55 +1,61 @@
 Welcome to your Dreamhack installation!
 
-This Dreamhack service is provided by Sophie (<sophie@dreamwidth.org>)
-and is available for general use. Preference will be given to those actively
-doing development work, but please don't let the word 'development' stop you;
-we have a healthy, nurturing community of people who are more than willing to
-give their time in order to help out newcomers. (See the 'Community' section
-below for more details.)
+This Dreamhack service is provided by Dreamwidth and is available
+for general use. Preference will be given to those actively doing
+development work, but please don't let the word 'development' stop you;
+we have a healthy, nurturing community of people who are more than
+willing to give their time in order to help out newcomers. (See the
+'Community' section below for more details.)
 
-(Notice for those who have read this README before: There have been updates for
-the new server, and you may want to read it again. In particular, you now need
-to connect to a different SSH server, "ssh-hack.dreamwidth.net"; more details
-are below.)
+(Notice for those who have read this README before: There have been
+updates for the new server, and you may want to read it again. In
+particular, you now need to connect to a different SSH server,
+"ssh-hack.dreamwidth.net"; more details are below.)
 
 Getting Started
 ===============
 
-rahaeli has written a superb wiki page detailing how to get started with your
-Dreamhack at the following address:
+rahaeli has written a superb wiki page detailing how to get started with
+your Dreamhack at the following address:
+
   http://wiki.dreamwidth.net/wiki/index.php/Dreamhack_Getting_Started
 
-It covers most of the common things you'll need to do to get started. If you
-have an issue, check this page first.
+It covers most of the common things you'll need to do to get started. If
+you have an issue, check this page first.
 
 Connecting
 ==========
 
-You will need an SSH client to connect to your Dreamhack. You'll be using SSH
-to work with your Dreamhack for most things, including creating patches, so
-it's worth getting to know how to use it.
+You will need an SSH client to connect to your Dreamhack. You'll be
+using SSH to work with your Dreamhack for most things, including
+creating patches, so it's worth getting to know how to use it.
 
   * Windows users can use PuTTY, from this URL:
+
       http://www.chiark.greenend.org.uk/~sgtatham/putty/
 
-    You'll want to fill in the hostname as "ssh-hack.dreamwidth.net", then just
-    click Connect. (Alternatively, save it as a stored session for later.)
+    You'll want to fill in the hostname as "ssh-hack.dreamwidth.net",
+    then just click Connect. (Alternatively, save it as a stored session
+    for later.)
 
-  * Linux and Mac OS X users will generally already have OpenSSH, which will
-    allow you to connect. You can do this from the terminal; type the following
-    command (replacing  'dh-username' with your actual username):
+  * Linux and Mac OS X users will generally already have OpenSSH, which
+    will allow you to connect. You can do this from the terminal; type the
+    following command (replacing 'dh-username' with your actual username):
+
       ssh dh-username@ssh-hack.dreamwidth.net
 
-To connect, use the username/password combination from your initial email. (If
-you're reading this from the email itself, these details are above.) Please be
-aware that while your Dreamhack URL is at "hack.dreamwidth.net", you will need
-to SSH to "ssh-hack.dreamwidth.net".
+To connect, use the username/password combination from your
+initial email. (If you're reading this from the email itself,
+these details are above.) Please be aware that while your
+Dreamhack URL is at "hack.dreamwidth.net", you will need to SSH to
+"ssh-hack.dreamwidth.net".
 
-The first time you connect, your client will tell you that it doesn't have the
-host key in its cache. Check to make sure that the key fingerprint it lists is
-the same as any one of the lines below, and if so, feel free to continue.
-(Generally this will involve clicking or typing "Yes" at the prompt.) If the
-host key doesn't match, please contact Sophie at <sophie@dreamwidth.org>.
+The first time you connect, your client will tell you that it doesn't
+have the host key in its cache. Check to make sure that the key
+fingerprint it lists is the same as any one of the lines below, and
+if so, feel free to continue. (Generally this will involve clicking
+or typing "Yes" at the prompt.) If the host key doesn't match, please
+contact Mark at <mark@dreamwidth.org>.
 
   * ECDSA:
       SHA256: TAtO07wp/zu1L4lIoYPnJh9pficQUcBsl9aqZiEM6UE
@@ -63,36 +69,39 @@ host key doesn't match, please contact Sophie at <sophie@dreamwidth.org>.
       SHA256: mxpvqf1GWXHNpcnyPFXFJ0OcdqcIDlXlpT/Za/2i1Fg
          MD5: fd:76:e0:33:91:8f:e2:5d:7f:3f:b6:a3:e4:75:a3:18
 
-When you log in for the first time, you will be reminded to create the
-password for the 'system' user. This can be done by running the following
-command:
+When you log in for the first time, you will be reminded to create
+the password for the 'system' user. This can be done by running the
+following command:
+
     $LJHOME/bin/upgrading/make_system.pl
 
-It is also recommended that on login you change your password to something
-more easily memorable by using the "passwd" command.
+It is also recommended that on login you change your password to
+something more easily memorable by using the "passwd" command.
 
 Maintenance
 ===========
 
-The Dreamhack installation that is installed is up-to-date at the time of
-setup, but if you wish to keep it up-to-date you will need to do so yourself.
-Instructions on doing so can be found at:
+The Dreamhack installation that is installed is up-to-date at the time
+of setup, but if you wish to keep it up-to-date you will need to do so
+yourself. Instructions on doing so can be found at:
+
   http://wiki.dreamwidth.net/wiki/index.php/Dev_Maintenance
 
-Although your Dreamhack is ready to run, you may be interested in editing
-the $LJHOME/ext/local/etc/config-local.pl file in order to further customize
-the options available.
+Although your Dreamhack is ready to run, you may be interested in
+editing the $LJHOME/ext/local/etc/config-local.pl file in order to
+further customize the options available.
 
-You can start and stop your Apache instance using the commands "start-apache"
-and "stop-apache". Although the initial setup will give you a working Apache
-instance, it will not bring it up automatically, so you will need to use
-"start-apache" to do so. (In the past, Apache instances were automatically
-brought up; this has changed due to memory considerations.)
+You can start and stop your Apache instance using the commands
+"start-apache" and "stop-apache". Although the initial setup will give
+you a working Apache instance, it will not bring it up automatically,
+so you will need to use "start-apache" to do so. (In the past, Apache
+instances were automatically brought up; this has changed due to memory
+considerations.)
 
-Please note that if the host machine is rebooted, Dreamhack installations on
-the server will not be brought back up automatically. In addition, if you do
-not foresee using your Dreamhack for a period of time, please bring it down
-with the "stop-apache" command.
+Please note that if the host machine is rebooted, Dreamhack
+installations on the server will not be brought back up automatically.
+In addition, if you do not foresee using your Dreamhack for a period of
+time, please bring it down with the "stop-apache" command.
 
 Resources
 =========
@@ -101,67 +110,77 @@ If you're looking for a guide on what to do next, there are a number of
 resources on our wiki that you might find useful:
 
   * http://wiki.dreamwidth.net/wiki/index.php/Beginning_dev_checklist
-      This is an overview for beginning developers that starts at the *very*
-      beginning, which may be useful to some people.
+
+      This is an overview for beginning developers that starts at the
+      *very* beginning, which may be useful to some people.
 
   * http://wiki.dreamwidth.net/wiki/index.php/Development
+
       An overview of development topics.
 
   * http://wiki.dreamwidth.net/wiki/index.php/Dev_Getting_Started
+
       An overview of getting started.
 
   * http://wiki.dreamwidth.net/wiki/index.php/Version_Control
-      A brief overview of how to use git, the versioning system we use. This
-      also includes information on how to make a pull request on GitHub so that
-      your changes can be committed.
+
+      A brief overview of how to use git, the versioning system we use.
+      This also includes information on how to make a pull request on
+      GitHub so that your changes can be committed.
 
   * http://wiki.dreamwidth.net/wiki/index.php/Github_Issues
-      An overview of the Issues system on GitHub, with step-by-step guides for
-      how to report and work on bugs.
+
+      An overview of the Issues system on GitHub, with step-by-step
+      guides for how to report and work on bugs.
 
 Other articles can be found at this URL:
+
   http://wiki.dreamwidth.net/wiki/index.php/Category:Development
 
 Submitting your Changes
 =======================
 
-Once you've made changes to the code, you can submit them for review by making
-a pull request on GitHub. Your Dreamhack has already been set up with your
-dw-free/dw-nonfree forks set as the origin, so you simply need to push your
-changes and then hop onto the GitHub website and send a pull request.
+Once you've made changes to the code, you can submit them for review by
+making a pull request on GitHub. Your Dreamhack has already been set up
+with your dw-free/dw-nonfree forks set as the origin, so you simply need
+to push your changes and then hop onto the GitHub website and send a
+pull request.
 
 The process for doing this can be found on the wiki:
+
   http://wiki.dreamwidth.net/wiki/index.php/Version_Control
 
-Note that you will need a Contributor Licensing Agreement (CLA) on file with
-Dreamwidth Studios, LLC before your changes can be accepted into the codebase.
-More information on CLAs can be found on the wiki:
+Note that you will need a Contributor Licensing Agreement (CLA) on file
+with Dreamwidth Studios, LLC before your changes can be accepted into
+the codebase. More information on CLAs can be found on the wiki:
+
   http://wiki.dreamwidth.net/wiki/index.php/Contributor_Licensing_Agreement
 
 Community
 =========
 
 There is a thriving community of Dreamwidth pioneers, including coders,
-designers, testers, and others; most of us live on IRC at irc.freenode.net,
-on the #dreamwidth channel. If you have a query or concern, you can often get
-an answer in real-time here. (If you're not sure how to join us, take a look
-at http://wiki.dreamwidth.net/wiki/index.php/IRC_help .)
+designers, testers, and others; most of us live in Discord. If you have
+a query or concern, you can often get an answer in real-time there! To
+join, please follow this link:
 
-There is also a sister channel, #dreamwidth-dev, specifically for developers.
-You'll never be derided for anything in either channel, so don't worry that
-you might ask a stupid question; there are no stupid questions. :)
+  https://discord.gg/dreamwidth
+
+Once you have joined, say hello in the #introductions channel and one of
+our staff will get you in to see all the other channels.
 
 We also have two development communities on Dreamwidth:
+
   * http://dw-dev.dreamwidth.org/profile
+
       This community is for general discussion on Dreamwidth development.
 
   * http://dw-dev-training.dreamwidth.org/profile
-      This community is focused more on helpful tips on working with Dreamwidth
-      code, or even coding in general. You'll probably find something here even
-      if you're an experienced coder, so do take a look.
 
-You can find me, Sophie, on all four of these places. My Dreamwidth username
-is "sophie", and my IRC nickname is "Sophira".
+      This community is focused more on helpful tips on working with
+      Dreamwidth code, or even coding in general. You'll probably find
+      something here even if you're an experienced coder, so do take a
+      look.
 
 Please feel free to join us!
 
@@ -172,53 +191,59 @@ The following is an explanation of the files/directories you will find in your
 home directory:
 
   * apache/
+
       This directory contains your Apache configuration and log files.
 
-      By default, the Apache configuration simply defines a few environment
-      variables for your particular Dreamhack account (in the conf/envvars
-      file) and then uses a generic Apache config tailored for Dreamhacks;
-      among other things, this means that you will generally never need to
-      update your Apache config as updates to the generic one will be able to
-      take effect.
+      By default, the Apache configuration simply defines a few
+      environment variables for your particular Dreamhack account (in
+      the conf/envvars file) and then uses a generic Apache config
+      tailored for Dreamhacks; among other things, this means that you
+      will generally never need to update your Apache config as updates
+      to the generic one will be able to take effect.
 
-      You will likely never have to change your Apache configuration, but if
-      you find it to be necessary, please contact Sophie via either email
-      (<sophie@dreamwidth.org>), IRC or the "dw_dev" Dreamwidth community first
-      in order to make sure that your changes are reflected in the generic
-      configration, if necessary.
+      You will likely never have to change your Apache configuration,
+      but if you find it to be necessary, please reach out to us on
+      Discord or in the dw_dev community. If you need to make changes,
+      we might need to make them to the default configuration for
+      others!
 
   * bin/
-      This directory is the first entry in your PATH environment variable, and
-      contains the following scripts:
+
+      This directory is the first entry in your PATH environment
+      variable, and contains the following scripts:
 
         * start-apache - starts your Apache instance.
         * stop-apache  - stops your Apache instance.
 
-      If you need more scripts in your PATH, this is the place to add them. A
-      selection of scripts can be found at:
+      If you need more scripts in your PATH, this is the place to add
+      them. A selection of scripts can be found at:
+
         http://wiki.dreamwidth.net/wiki/index.php/Dev_Maintenance#Scripting
 
   * dw/
-      This is where your Dreamhack installation lives, and is the target of the
-      LJHOME environment variable - so this is where you'll be spending most of
-      your time. ;)
+
+      This is where your Dreamhack installation lives, and is the target
+      of the LJHOME environment variable - so this is where you'll be
+      spending most of your time. ;)
 
   * crontab-import
-      This file contains a sample crontab which you may import if you need to.
-      Instructions on doing so are contained in the file.
+
+      This file contains a sample crontab which you may import if you
+      need to. Instructions on doing so are contained in the file.
 
   * .gitconfig
-      This file (which is hidden by default because of the dot at the start of
-      its name) is how you can configure git. On a new install, the 'name' and
-      'email' fields are already filled in by the automatic installer; you can
-      change these if you wish your changes to be credited to another name or
-      email address.
+
+      This file (which is hidden by default because of the dot at
+      the start of its name) is how you can configure git. On a new
+      install, the 'name' and 'email' fields are already filled in by
+      the automatic installer; you can change these if you wish your
+      changes to be credited to another name or email address.
 
 Epilogue
 ========
 
-Hopefully, this should be all the information you need to get started. Should
-you need any more information, please feel free to contact me at
-<sophie@dreamwidth.org>, or find me on #dreamwidth IRC as "Sophira".
+Hopefully, this should be all the information you need to get started.
+Should you need any more information, please reach out to us on Discord
+or in the dw_dev community!
 
- - Sophie.
+ - the Dreamhack team!

@@ -15,7 +15,7 @@ else {
   print <<OUT;
 Content-Type: text/plain; charset=UTF-8
 
-You shouldn't be seeing this. If you do, please contact Sophie on IRC and tell her.
+You shouldn't be seeing this. If you do, please contact an admin.
 
 (debug info:)
  Host: $host
