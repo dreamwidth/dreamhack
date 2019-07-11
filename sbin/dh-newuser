@@ -161,6 +161,8 @@ if [ "$DELETE" == "1" ]; then
     # delete mysql databases
     mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${DBPREFIX}_$USERNAME\`"
     mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_$USERNAME\`"
+    mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_${USERNAME}_c01\`"
+    mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_${USERNAME}_c02\`"
   else
     APACHESLEFT=`$LIBDIR/get-apaches $USERNAME`
     if [ "$APACHESLEFT" == "" ]; then
@@ -178,6 +180,8 @@ if [ "$DELETE" == "1" ]; then
       # delete mysql databases
       mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${DBPREFIX}_$USERNAME\`"
       mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_$USERNAME\`"
+      mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_${USERNAME}_c01\`"
+      mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "DROP DATABASE IF EXISTS \`${TESTDBPREFIX}_${USERNAME}_c02\`"
     else
       echo "Some Apaches still left, not deleting other stuff"
     fi
@@ -442,6 +446,12 @@ mysql -u$MYSQLUSER -p$MYSQLPASSWORD -e "
 
   CREATE DATABASE \`${TESTDBPREFIX}_$USERNAME\`;
   GRANT ALL PRIVILEGES ON \`${TESTDBPREFIX}_$USERNAME\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD';
+
+  CREATE DATABASE \`${TESTDBPREFIX}_${USERNAME}_c01\`;
+  GRANT ALL PRIVILEGES ON \`${TESTDBPREFIX}_${USERNAME}_c01\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD';
+
+  CREATE DATABASE \`${TESTDBPREFIX}_${USERNAME}_c02\`;
+  GRANT ALL PRIVILEGES ON \`${TESTDBPREFIX}_${USERNAME}_c02\`.* TO '${USERPREFIX}_$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD';
 "
 
 # create initial LJ config and tweak it for the installation
@@ -506,6 +516,11 @@ su -lc "
   \$LJHOME/bin/upgrading/update-db.pl -r --cluster=all --innodb
   \$LJHOME/bin/upgrading/update-db.pl -p
   \$LJHOME/bin/upgrading/texttool.pl load
+
+  DW_TEST=1 \$LJHOME/bin/upgrading/update-db.pl -r --innodb
+  DW_TEST=1 \$LJHOME/bin/upgrading/update-db.pl -r --innodb
+  DW_TEST=1 \$LJHOME/bin/upgrading/update-db.pl -r --cluster=all --innodb
+  DW_TEST=1 \$LJHOME/bin/upgrading/update-db.pl -p
 " $UNIXUSER
 
 # compile the stylesheets
@@ -518,8 +533,8 @@ su -lc "
 # set up the TheSchwartz database
 su -lc "
   PS1=blah source $UHOME/.bashrc
-#  \$LJHOME/bin/ljdb < \$LJHOME/cvs/TheSchwartz/doc/schema.sql
   \$LJHOME/bin/ljdb < /usr/share/doc/libtheschwartz-perl/schema.sql
+  DW_TEST=1 \$LJHOME/bin/ljdb < /usr/share/doc/libtheschwartz-perl/schema.sql
 " $UNIXUSER
 
 echo "Creating .firstlogin..."
