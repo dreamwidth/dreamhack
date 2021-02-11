@@ -357,13 +357,12 @@ else
     git remote add dreamwidth https://github.com/dreamwidth/dw-free
     git fetch dreamwidth
     # we also want to sync up with the main branches
-    git branch --set-upstream develop dreamwidth/develop 
     git branch --set-upstream master dreamwidth/master
 
     # now map the other remote branches from our *own* repository to local branches
     REMOTEBRANCHES=\$(git branch -a | perl -ne 'if (/^  remotes\\/origin\\/([^ ]+)$/) { print \$1 }')
     for branch in \$REMOTEBRANCHES; do
-      if [[ \"\$branch\" != \"develop\" && \"\$branch\" != \"master\" ]]; then
+      if [[ \"\$branch\" != \"master\" ]]; then
         git branch \"\$branch\" origin/\"\$branch\"
       fi
     done
@@ -378,13 +377,12 @@ else
       cd dw-nonfree
       git remote add dreamwidth https://github.com/dreamwidth/dw-nonfree
       git fetch dreamwidth
-      git branch --set-upstream develop dreamwidth/develop
       git branch --set-upstream master dreamwidth/master
 
       # now map the other remote branches from our *own* repository to local branches
       REMOTEBRANCHES=\$(git branch -a | perl -ne 'if (/^  remotes\\/origin\\/([^ ]+)$/) { print \$1 }')
       for branch in \$REMOTEBRANCHES; do
-        if [[ \"\$branch\" != \"develop\" && \"\$branch\" != \"master\" ]]; then
+        if [[ \"\$branch\" != \"master\" ]]; then
           git branch \"\$branch\" origin/\"\$branch\"
         fi
       done
