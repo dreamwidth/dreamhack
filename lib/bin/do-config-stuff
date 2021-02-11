@@ -21,9 +21,12 @@ while (<LOCAL>) {
   if ($line=~/^( *\$EMBED_MODULE_DOMAIN) = "embed\.my-other-domain\.net";$/) {
     $line = "$1 = \"embed.system.$username.hack.dreamwidth.net\";";
   }
-  if ($line=~/^( *\$STATDOCS) = "[^"]+"(;.*)$/) {
+  elsif ($line=~/^( *\$STATDOCS) = "[^"]+"(;.*)$/) {
     $line = "$1 = \"\$HOME/build/static\"$2";
     $foundstatdocs = 1;
+  }
+  elsif ($line=~/^( *\$PROTOCOL) = "[^"]+"(;.*)$/) {
+    $line = "$1 = \"http\"$2";
   }
 #  elsif ($gotschwartzdbs) {
 #    if ($line eq "") { $gotschwartzdbs = 0; }
