@@ -463,8 +463,9 @@ su -lc "
   echo 'highest' > ext/local/.dir_scope
 
   # we can't make any changes to these files or they'll show up in 'git status', so we can't move them.
-  cp --remove-destination -a $LJHOME/etc/config-local.pl $LJHOME/ext/local/etc/config-local.pl
-  cp --remove-destination -a $LJHOME/etc/config-private.pl $LJHOME/ext/local/etc/config-private.pl
+  cp --remove-destination -a $LJHOME/etc/config.pl.example $LJHOME/ext/local/etc/config.pl
+  cp --remove-destination -a $LJHOME/etc/config-local.pl.example $LJHOME/ext/local/etc/config-local.pl
+  cp --remove-destination -a $LJHOME/etc/config-private.pl.example $LJHOME/ext/local/etc/config-private.pl
   cp --remove-destination -a $LJHOME/t/config-test-private.pl $LJHOME/ext/local/t/config-test-private.pl
   chmod go-rwx $LJHOME/ext/local/etc/config-private.pl
   chmod go-rwx $LJHOME/ext/local/t/config-test-private.pl
