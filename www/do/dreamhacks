@@ -5,7 +5,7 @@ require '/dreamhack/lib/dreamhacks-db-readonly.pl';
 
 print header("text/html; charset=UTF-8");
 
-my $sth = $dbh->prepare('SELECT `homedir`, `apachedir`, `domain`, `lj_username`, `dw_username`, `irc_nick`, `preferred_name` FROM `userports` LEFT OUTER JOIN `users` USING (`username`) ORDER BY `ssh_username` ASC');
+my $sth = $dbh->prepare('SELECT `homedir`, `apachedir`, `domain`, `lj_username`, `dw_username`, `preferred_name` FROM `userports` LEFT OUTER JOIN `users` USING (`username`) ORDER BY `ssh_username` ASC');
 $sth->execute();
 
 if ($sth->rows == 0) {
@@ -15,7 +15,7 @@ if ($sth->rows == 0) {
 
 print <<HEADER;
 <table id="dreamhacks">
-<tr><th>Name</th><th>DW / LJ / IRC Name</th><th>URL</th></tr>
+<tr><th>Name</th><th>DW / LJ</th><th>URL</th></tr>
 HEADER
 while (my $row = $sth->fetchrow_hashref()) {
   my $name = $row->{'preferred_name'};
@@ -24,7 +24,6 @@ while (my $row = $sth->fetchrow_hashref()) {
   if (defined($dwuser)) { $dwuser = make_dwusertag($dwuser, 0); }
   my $ljuser = $row->{'lj_username'};
   if (defined($ljuser)) { $ljuser = make_ljusertag($ljuser, 0); }
-  my $ircnick = $row->{'irc_nick'};
 
   my $apachefile = $row->{'homedir'} . "/" . $row->{'apachedir'} . "/etc/httpd.pid";
   my $running = 0;
@@ -43,7 +42,6 @@ while (my $row = $sth->fetchrow_hashref()) {
   my @usernames = ();
   push(@usernames, $dwuser) if $dwuser;
   push(@usernames, $ljuser) if $ljuser;
-  push(@usernames, "IRC: <b>$ircnick</b>") if $ircnick;
   $printrow .= join(" / ", @usernames) . "</td><td>$url</td></tr>";
   print "$printrow\n";
   my  $planfile = $row->{'homedir'} . "/.plan";
