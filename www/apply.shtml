@@ -5,11 +5,11 @@
           your application to be processed. The username, preferred name and DW/LJ/IRC name
           fields will appear publicly on the <a href="/dreamhacks.shtml">Dreamhacks</a> page.</p>
 
-          <p>As we use <a href="https://github.com/">GitHub</a> for our development process, you'll
+          <p><b>IMPORTANT</b>: As we use <a href="https://github.com/">GitHub</a> for our development process, <b>you'll
           need a GitHub account with the
           <a href="https://github.com/dreamwidth/dw-free/">dw-free</a> and
           <a href="https://github.com/dreamwidth/dw-nonfree/">dw-nonfree</a>
-          repositories forked before a Dreamhack can be made for you.
+          repositories already forked before a Dreamhack can be made for you.</b>
           <strong><a href="/why-github.shtml">More information about GitHub can be found here</a></strong>.</p>
 
           <form method="post" action="/do/apply">
@@ -18,7 +18,7 @@
           <tr><th><label for="dwname">Your DW username (if you have one):</label></th><td><input type="text" id="dwname" name="dwname" size="25" class="dwuser stretch"></td></tr>
           <tr><th><label for="ljname">Your LJ username (if you have one):</label></th><td><input type="text" id="ljname" name="ljname" size="15" class="ljuser stretch"></td></tr>
           <tr><th><label for="ghname">Your GitHub username:</label></th><td><input type="text" id="ghname" name="ghname" size="25" class="stretch"> (<a href="/why-github.shtml">why do I need a GitHub username?</a>)</td></tr>
-          <tr><th><label for="ircname">Your IRC name (if you use it):</label></th><td><input type="text" id="ircname" name="ircname" size="25" class="stretch"></td></tr>
+          <tr><th><label for="ircname">Your Discord name (if you use it):</label></th><td><input type="text" id="discordname" name="discordname" size="25" class="stretch"></td></tr>
           <tr><th><label for="prefname">Your preferred name:</label></th><td><input type="text" id="prefname" name="prefname" size="30" class="stretch"></td></tr>
           <tr><th><label for="email">Your email address:</label></th><td><input type="text" id="email" name="email" size="30" class="stretch"></td></tr>
           <tr><th>Your main purposes for a Dreamhack:</th><td>
