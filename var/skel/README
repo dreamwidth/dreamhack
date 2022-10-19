@@ -142,7 +142,7 @@ Submitting your Changes
 
 Once you've made changes to the code, you can submit them for review by
 making a pull request on GitHub. Your Dreamhack has already been set up
-with your dw-free/dw-nonfree forks set as the origin, so you simply need
+with your `dreamwidth` fork set as the origin, so you simply need
 to push your changes and then hop onto the GitHub website and send a
 pull request.
 

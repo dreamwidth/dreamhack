@@ -22,7 +22,7 @@ my $u = decode_json($userout);
 my $canon = $u->{'login'};   # this is the canonically-cased name, necessary for setting up the repos.
 print STDERR "GitHub user '$canon' found, checking repos...\n";
 
-my @repos = qw(dw-free dw-nonfree);
+my @repos = qw(dreamwidth);
 foreach my $repo (@repos) {
   print STDERR "$canon/$repo... ";
   my $repoout = get("https://api.github.com/repos/$canon/$repo");

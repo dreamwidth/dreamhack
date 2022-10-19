@@ -36,16 +36,8 @@ def fetch_from_repo(repo, since):
 def fetch_issues(since_input):
     """Fetch issues from github for a given timespan."""
     since = datetime.strptime(since_input, "%Y-%m-%d")
+    return fetch_from_repo("dreamwidth/dreamwidth", since)
 
-    dw_free = fetch_from_repo("dreamwidth/dw-free", since)
-    dw_nonfree = fetch_from_repo("dreamwidth/dw-nonfree", since)
-    for issue in dw_nonfree:
-        issue["is_nonfree"] = True
-
-    issues = dw_free
-    issues.extend(dw_nonfree)
-
-    return issues
 
 def extract_data(raw_data, date_end):
     """Extracts the values that we need from the raw data and returns a list.

@@ -56,7 +56,7 @@ while (my $row = $sth->fetchrow_hashref()) {
     $plan=~s/>/&gt;/g;
     $plan=~s/\n/<br>/gs;
     $plan=~s/(http:\/\/[a-zA-Z0-9\.\/:\?=&\-~_,!%;#\+]+[a-zA-Z0-9\.\/=&\-~_%#\+])/<a href="$1" rel="nofollow">$1<\/a>/g;
-    $plan=~s/\b((?:bug|issue) #?)(\d+)\b/<a href="https:\/\/github\.com\/dreamwidth\/dw-free\/issues\/$2">$1$2<\/a>/gi;
+    $plan=~s/\b((?:bug|issue) #?)(\d+)\b/<a href="https:\/\/github\.com\/dreamwidth\/dreamwidth\/issues\/$2">$1$2<\/a>/gi;
     print "<tr><td colspan=\"3\" class=\"planfile\"><p class=\"planfileheader\"><b>${name}'s .plan:</b></p><p class=\"planfile\">$plan</p></td></tr>\n";
   }
 }

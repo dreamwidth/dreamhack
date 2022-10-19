@@ -364,8 +364,8 @@ Your Apache instance will also be automatically started.
 The reinstall process will clone the repositories from your own GitHub account,
 so any changes that you've pushed to GitHub will be preserved. If you wish to
 start completely from scratch, you will need to cancel this request with the
-command above, delete your "dw-free" and "dw-nonfree" repositories from GitHub,
-and then re-fork them. Then, start the reinstallation process again.
+command above, delete your "dreamwidth" repository from GitHub, and then
+re-fork them. Then, start the reinstallation process again.
 
 If you have any data you need to backup that has not been pushed to GitHub
 (including work-in-progress branches or configuration files in your home
@@ -406,7 +406,7 @@ try reinstalling again. If the problem persists, please contact a Dreamhack
 admin and let us know!
 MESSAGE
   }
-  # check the GitHub account for the dw-free and dw-nonfree repos
+  # check the GitHub account for the dreamwidth repos
   my ($result, $canongitname) = checkGitHub($ghname);
   if ($result == 1) {
     return makeError($username, "Error occurred while checking GitHub account: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
@@ -425,13 +425,13 @@ MESSAGE
   elsif ($result == 2) {
     return makeError($username, "Error occurred while checking GitHub repository existence: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
 ${premessage}Your Dreamhack could not be rebuilt because there was a problem checking your
-GitHub account '$ghname' for the 'dw-free' and 'dw-nonfree' repositories. If your
+GitHub account '$ghname' for the 'dreamwidth' repository. If your
 GitHub username is not '$ghname', please run the following command on the
 Dreamhack server to correct it:
 
 /dreamhack/bin/edit-dreamhack-info
 
-If you have forked the 'dw-free' and 'dw-nonfree' repositories on your GitHub
+If you have forked the 'dreamwidth' repository on your GitHub
 account and this GitHub username is correct, there may have been an error
 communicating with GitHub - please try again in a few minutes. If the problem
 persists, please contact a Dreamhack admin and let us know. 
@@ -440,7 +440,7 @@ MESSAGE
   elsif ($result == 3) {
     return makeError($username, "Error occurred while checking GitHub repository ownership: $ghname ($username)", "Your Dreamhack could not be rebuilt", <<MESSAGE);
 ${premessage}Your Dreamhack could not be rebuilt because there was a problem checking your
-GitHub account '$ghname' for the 'dw-free' and 'dw-nonfree' repositories. You
+GitHub account '$ghname' for the 'dreamwidth' repository. You
 need to fork the repositories onto your account, otherwise you will not be able
 to push your changes own repositories.  After you have done so, try the
 reinstallation process again. If the problem persists, please contact a

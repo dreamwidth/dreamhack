@@ -15,7 +15,6 @@ LIBDIR="$BASEDIR/lib/bin"			# support scripts
 SKELDIR="$BASEDIR/var/skel"			# the directory to copy for the initial home directory
 
 BASEHOMEDIR="$BASEDIR/home"			# the directory that home directories should live under - this can be anything you want
-NONFREE=1					# copy over the dw-nonfree repository?
 
 USERPREFIX="dh"					# the prefix used for both UNIX and database usernames
 						# UNIX users get "$USERPREFIX-", database users get "$USERPREFIX_"
@@ -343,51 +342,28 @@ if [ "$COPYDHROOT" == "1" ]; then
     cp -a /dreamhack/opt/dhroot $LJHOME
     cd $LJHOME
     git pull
-    cd $LJHOME/ext/dw-nonfree
-    git pull
 " $UNIXUSER
 else
-  # clone the dw-free repo from the user's GitHub account
-  echo cloning dw-free...
+  # clone the dreamwidth repo from the user's GitHub account
+  echo cloning dreamwidth...
   su -lc "
-    git clone https://$CGITNAME@github.com/$CGITNAME/dw-free.git $LJHOME
+    git clone https://$CGITNAME@github.com/$CGITNAME/dreamwidth.git $LJHOME
     cd $LJHOME
 
     # and let's make it aware of the dreamwidth repository so we can grab updates later
-    git remote add dreamwidth https://github.com/dreamwidth/dw-free
+    git remote add dreamwidth https://github.com/dreamwidth/dreamwidth
     git fetch dreamwidth
     # we also want to sync up with the main branches
-    git branch --set-upstream master dreamwidth/master
+    git branch --set-upstream main dreamwidth/main
 
     # now map the other remote branches from our *own* repository to local branches
     REMOTEBRANCHES=\$(git branch -a | perl -ne 'if (/^  remotes\\/origin\\/([^ ]+)$/) { print \$1 }')
     for branch in \$REMOTEBRANCHES; do
-      if [[ \"\$branch\" != \"master\" ]]; then
+      if [[ \"\$branch\" != \"main\" ]]; then
         git branch \"\$branch\" origin/\"\$branch\"
       fi
     done
   " $UNIXUSER
-
-  if [ "$NONFREE" == "1" ]; then
-    # do the same for dw-nonfree
-    echo cloning dw-nonfree...
-    su -lc "
-      cd $LJHOME/ext
-      git clone https://$CGITNAME@github.com/$CGITNAME/dw-nonfree.git
-      cd dw-nonfree
-      git remote add dreamwidth https://github.com/dreamwidth/dw-nonfree
-      git fetch dreamwidth
-      git branch --set-upstream master dreamwidth/master
-
-      # now map the other remote branches from our *own* repository to local branches
-      REMOTEBRANCHES=\$(git branch -a | perl -ne 'if (/^  remotes\\/origin\\/([^ ]+)$/) { print \$1 }')
-      for branch in \$REMOTEBRANCHES; do
-        if [[ \"\$branch\" != \"master\" ]]; then
-          git branch \"\$branch\" origin/\"\$branch\"
-        fi
-      done
-    " $UNIXUSER
-  fi
 fi
 
 # put a crontab file in the user's home directory, but don't load
@@ -475,7 +451,7 @@ su -lc "
 
 Please note that changes to the files in this directory might not take effect!
 
-This directory hosts the default configuration files from the 'dw-free' Git
+This directory hosts the default configuration files from the 'dreamwidth' Git
 repository, and on a Dreamhack these files should not be edited unless you are
 working on an issue that requires a change to the default configuration files.
 To change the configuration of your Dreamhack, the correct configuration files

@@ -8,9 +8,8 @@
 
           <p>As we use GitHub's issue tracker for submitting changes to the source code, we've found
           that it's easiest for everybody if developers wanting to make changes to the code have a
-          GitHub account, and have the two main repositories - <strong><a
-          href="https://github.com/dreamwidth/dw-free/">dw-free</a></strong> and <strong><a
-          href="https://github.com/dreamwidth/dw-nonfree/">dw-nonfree</a></strong> - "forked".
+          GitHub account, and have the main repository - <strong><a
+          href="https://github.com/dreamwidth/dreamwidth/">dreamwidth</a></strong> - "forked".
           (Forking a repository on GitHub means that you have your own copy of the code to work
           with.)</p>
 
@@ -27,7 +26,7 @@ sign with a down arrow next to it, and a user picture with a down arrow next to
 it. Below these are three buttons with numbers next to them: 'Unwatch', 'Star'
 and 'Fork'. The 'Fork' button is circled in red."></p>
 
-          <p>After doing this for both <strong>dw-free</strong> and <strong>dw-nonfree</strong>, you
+          <p>After doing this for <strong>dreamwidth</strong>, you
           will have your own copy of the code and can apply for a Dreamhack by <a
           href="/apply.shtml">using the application form</a>. As part of the Dreamhack setup
           process, we'll download your copy of the code and set it up in your own area, so that you

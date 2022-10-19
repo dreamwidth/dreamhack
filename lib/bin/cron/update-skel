@@ -2,20 +2,10 @@
 export LJHOME="/dreamhack/opt/dhroot"
 if [ ! -d "$LJHOME/.git" ]; then
   echo "'$LJHOME' doesn't exist, cloning..."
-  git clone https://github.com/dreamwidth/dw-free.git "$LJHOME"   # the Daily Snapshot is never going to push anything, so no need for a username
+  git clone https://github.com/dreamwidth/dreamwidth.git "$LJHOME"   # the Daily Snapshot is never going to push anything, so no need for a username
 else
-  echo "Pulling from remote dw-free into '$LJHOME'..."
+  echo "Pulling from remote dreamwidth into '$LJHOME'..."
   cd "$LJHOME"
   git tag -d code-tour   # we want this to be updated each time, for the code tour generator
-  git pull
-fi
-
-NONFREE="$LJHOME/ext/dw-nonfree"
-if [ ! -d "$NONFREE/.git" ]; then
-  echo "'$NONFREE' doesn't exist, cloning..."
-  git clone https://github.com/dreamwidth/dw-nonfree.git "$NONFREE"
-else
-  echo "Pulling from remote dw-nonfree into '$NONFREE'..."
-  cd "$NONFREE"
   git pull
 fi
