@@ -88,7 +88,7 @@ if (!defined $dates) {
 <p><small>The default value of the 'from' date is determined by the latest commit in the '<b>code-tour</b>' branch in the local copy of the dreamwidth repository, which is refreshed weekly.</small></p>
 
 <p><small>As a guide to how up-to-date the local copy of the repository is, the last commit on 'develop' according to this repository was made on <a href="https://github.com/dreamwidth/dreamwidth/commit/$refreshcommit">$refreshdate</a>. The closer this date is to today, the better.</small></p>
-<p>This script uses <span style='white-space: nowrap;'><a href='http://afuna.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://afuna.dreamwidth.org/'><b>afuna</b></a></span>'s code tour generator, programmed in Python.</p>
+<p>This script uses <span style='white-space: nowrap;'><a href='https://afuna.dreamwidth.org/profile'><img src='https://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='https://afuna.dreamwidth.org/'><b>afuna</b></a></span>'s code tour generator, programmed in Python.</p>
 </body>
 </html>
 HTML
@@ -141,7 +141,7 @@ else {
 <hr>
 <p>Copy and paste the following into a text editor, and then use <a href="http://wiki.dreamwidth.net/notes/How_to_do_a_Code_Tour">the wiki guide</a> to make the code tour. There may be duplicates between this code tour and the last one near the top; you may need to remove them manually. The 'category' field on each issue is set to the milestone if there is one, but for the vast majority this will not be filled in - please edit it if this is the case!</p>
 <textarea rows="20" cols="120">$doutput</textarea>
-<p>After you're done editing in your external text editor, <a href="http://www.dreamwidth.org/update?usejournal=dw_dev">open a window to post it in dw_dev</a>.</p>
+<p>After you're done editing in your external text editor, <a href="https://www.dreamwidth.org/update?usejournal=dw_dev">open a window to post it in dw_dev</a>.</p>
 </body>
 </html>
 HTML
@@ -158,7 +158,7 @@ HTML
 <hr>
 <p>The Python generator returned an error:</p>
 <pre>$derrors</pre>
-<p>You may want to try again, or else <a href="https://github.com/dreamwidth/dreamwidth/issues">manually do the code tour</a>. Also, poke <span style='white-space: nowrap;'><a href='http://mark.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://mark.dreamwidth.org/'><b>mark</b></a></span> about this.</p>
+<p>You may want to try again, or else <a href="https://github.com/dreamwidth/dreamwidth/issues">manually do the code tour</a>. Also, poke <span style='white-space: nowrap;'><a href='https://mark.dreamwidth.org/profile'><img src='https://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='https://mark.dreamwidth.org/'><b>mark</b></a></span> about this.</p>
 </body>
 </html>
 HTML
@@ -224,7 +224,7 @@ sub error {
 <p><input type="submit" value="Generate"></p>
 </form>
 <p><small>The default value of the 'from' date is determined by the '<b>code-tour</b>' tag in the local dreamwidth repository, which is refreshed weekly; it was last refreshed at $refreshdate</b>.</small></p>
-<p>This script uses <span style='white-space: nowrap;'><a href='http://afuna.dreamwidth.org/profile'><img src='http://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='http://afuna.dreamwidth.org/'><b>afuna</b></a></span>'s code tour generator, programmed in Python.</p>
+<p>This script uses <span style='white-space: nowrap;'><a href='https://afuna.dreamwidth.org/profile'><img src='https://s.dreamwidth.org/img/silk/identity/user.png' alt='[personal profile] ' width='17' height='17' style='vertical-align: text-bottom; border: 0; padding-right: 1px;' /></a><a href='https://afuna.dreamwidth.org/'><b>afuna</b></a></span>'s code tour generator, programmed in Python.</p>
 </body>
 </html>
 HTML
