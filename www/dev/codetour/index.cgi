@@ -35,9 +35,10 @@ if (!defined $dates) {
 <html>
 <head>
 <title>Code Tour Template Generator</title>
-<link rel="stylesheet" type="text/css" href="jquery.datepick.css">
-<script type="text/javascript" src="jquery.min.js"></script>
-<script type="text/javascript" src="jquery.datepick.min.js"></script>
+<link rel="stylesheet" type="text/css" href="datepick/jquery.datepick.css">
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript" src="js/jquery.plugin.min.js"></script>
+<script type="text/javascript" src="js/jquery.datepick.min.js"></script>
 <script type="text/javascript">
 \$(function() {
   function selectCustom() {

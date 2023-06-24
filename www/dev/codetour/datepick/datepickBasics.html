@@ -1,15 +1,13 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-     "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <title>jQuery Datepicker</title>
-<style type="text/css">
-@import "css/jquery.datepick.css";
-</style>
-<script type="text/javascript" src="js/jquery-1.4.2.js"></script>
-<script type="text/javascript" src="js/jquery.datepick.js"></script>
-<script type="text/javascript">
+<link href="jquery.datepick.css" rel="stylesheet">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="../js/jquery.plugin.min.js"></script>
+<script src="../js/jquery.datepick.min.js"></script>
+<script>
 $(function() {
 	$('#popupDatepicker').datepick();
 	$('#inlineDatepicker').datepick({onSelect: showDate});
@@ -30,5 +28,9 @@ function showDate(date) {
 <p>A popup datepicker <input type="text" id="popupDatepicker"></p>
 <p>Or inline</p>
 <div id="inlineDatepicker"></div>
+	<dl>
+		<dt>Github</dt><dd><a href="https://github.com/kbwood/datepick">https://github.com/kbwood/datepick</a></dd>
+		<dt>Bower</dt><dd>kbw-datepick</dd>
+	</dl>
 </body>
 </html>
