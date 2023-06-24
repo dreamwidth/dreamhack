@@ -27,8 +27,8 @@ else
 fi
 
 /dreamhack/sbin/dh-newuser --copy-dhroot --no-email --no-gh-check daily 7000 dreamhack-daily@theblob.org "Daily Snapshot" dreamwidth - -
-if [ -f ~dh-daily/dw/etc/config.pl ]; then
-  replace '$USE_ACCT_CODES = 1;' '$USE_ACCT_CODES = 0;' -- ~dh-daily/dw/etc/config.pl
+if [ -f ~dh-daily/dw/ext/local/etc/config.pl ]; then
+  replace '$USE_ACCT_CODES = 1;' '$USE_ACCT_CODES = 0;' -- ~dh-daily/dw/ext/local/etc/config.pl
 else
   echo "No config to replace!"
   exit 1
@@ -38,7 +38,7 @@ This Dreamhack account is automatically rebuilt every day at 12:30am GMT from th
 PLAN
 su -lc "
 PS1=blah source ~/.bashrc
-perl /dreamhack/lib/bin/cron/remake-daily-system-password --yes
+echo system | ~dh-daily/dw/bin/upgrading/make_system.pl
 " - dh-daily
 su -lc "start-apache" dh-daily
 ps u -u dh-daily
