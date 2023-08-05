@@ -6,7 +6,7 @@ use Digest::MD5 qw(md5);
 require '/dreamhack/lib/dreamhacks-db-readonly.pl';
 
 my $username = getpwuid($<);
-my $sth = $dbh->prepare("SELECT `preferred_name`, `github_username`, `lj_username`, `dw_username`, `irc_nick` FROM users WHERE ssh_username = ?");
+my $sth = $dbh->prepare("SELECT `preferred_name`, `github_username`, `lj_username`, `dw_username` FROM users WHERE ssh_username = ?");
 $sth->execute($username);
 if ($sth->rows == 0) {
   die "Couldn't find you in the Dreamhacks database. :( Please let an admin know about this.\n";
@@ -32,7 +32,6 @@ my $newfile = <<FILE;
 
     dw_username: $details->{'dw_username'}
 github_username: $details->{'github_username'}
-       irc_nick: $details->{'irc_nick'}
     lj_username: $details->{'lj_username'}
  preferred_name: $details->{'preferred_name'}
 FILE
@@ -72,7 +71,7 @@ else {
     $value=~s/^ +//;
     if (!exists($details->{$var}))  { print STDERR "Error: '$var' is not a valid name.\n";              $error = 1; }
     if (length($value) > 255)       { print STDERR "Error: Value for '$var' is over 255 characters.\n"; $error = 1; }
-    if (($var eq "lj_username") || ($var eq "dw_username") || ($var eq "irc_nick") || ($var eq "github_username")) {
+    if (($var eq "lj_username") || ($var eq "dw_username") || ($var eq "github_username")) {
       if ($value=~/ /) { print STDERR "Error: Value for '$var' cannot contain a space.\n"; $error = 1; }
     }
     if (($var eq "lj_username") && (length($value) > 15)) { print STDERR "Error: LJ username cannot be >15 characters long.\n"; $error = 1; }
