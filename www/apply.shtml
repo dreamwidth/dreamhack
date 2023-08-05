@@ -2,15 +2,14 @@
 <!--#include virtual="/_header.shtml" -->
           <h1>Apply for a Dreamhack</h1>
           <p>Use the form below to apply for a Dreamhack. Note that it may take up to a day for
-          your application to be processed. The username, preferred name and DW/LJ/IRC name
+          your application to be processed. The username, preferred name and DW/LJ name
           fields will appear publicly on the <a href="/dreamhacks.shtml">Dreamhacks</a> page.</p>
 
           <p><b>IMPORTANT</b>: As we use <a href="https://github.com/">GitHub</a> for our development process, <b>you'll
           need a GitHub account with the
-          <a href="https://github.com/dreamwidth/dw-free/">dw-free</a> and
-          <a href="https://github.com/dreamwidth/dw-nonfree/">dw-nonfree</a>
-          repositories already forked before a Dreamhack can be made for you.</b>
-          <strong><a href="/why-github.shtml">More information about GitHub can be found here</a></strong>.</p>
+          <a href="https://github.com/dreamwidth/dreamwidth/">dreamwidth</a>
+          repository already forked before a Dreamhack can be made for you.</b>
+          <a href="/why-github.shtml">More information about GitHub can be found here</a>.</p>
 
           <form method="post" action="/do/apply">
           <table id="application-form">
