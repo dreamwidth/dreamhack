@@ -144,7 +144,7 @@ MESSAGE
       # grab some more information from the database that we need to keep
       # before deleting the user entirely
       require '/dreamhack/lib/dreamhacks-db.pl';   # we need the read-write version for access to email addresses
-      my $sth = $dbh->prepare("SELECT `username`, `email`, `preferred_name`, `github_username`, `lj_username`, `dw_username`, `irc_nick` FROM `users` LEFT OUTER JOIN `user_emails` USING (`username`) WHERE `ssh_username` = ?");
+      my $sth = $dbh->prepare("SELECT `username`, `email`, `preferred_name`, `github_username`, `lj_username`, `dw_username` FROM `users` LEFT OUTER JOIN `user_emails` USING (`username`) WHERE `ssh_username` = ?");
       $sth->execute($username);
       my $error = 0;
       if (my $hash = $sth->fetchrow_hashref()) {
@@ -488,7 +488,6 @@ sub cmdEditDreamhackInfo {
   my %validargs = (
     lj_username => 1,
     dw_username => 1,
-    irc_nick => 1,
     preferred_name => 1,
     github_username => 1,
   );
@@ -503,7 +502,7 @@ sub cmdEditDreamhackInfo {
     else {
       # check the values before adding them
       if (length($value) > 255) { print STDERR "Error: Value for '$var' is over 255 characters.\n"; $error = 1; }
-      if (($var eq "lj_username") || ($var eq "dw_username") || ($var eq "irc_nick")) {
+      if (($var eq "lj_username") || ($var eq "dw_username")) {
         if ($value=~/ /) { print STDERR "Error: Value for '$var' cannot contain a space.\n"; $error = 1; }
       }
       if (($var eq "lj_username") && (length($value) > 15)) { print STDERR "Error: LJ username cannot be >15 characters long.\n"; $error = 1; }

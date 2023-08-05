@@ -25,7 +25,6 @@ while (<>) {
 			}
 
 			die "$dat{username} invalid email\n" unless $dat{email} =~ /^.+?@.+?\..+?$/;
-#			die "$dat{username} invalid irc name\n" if $dat{ircname} =~ /\s/;
 
 			$dat{ljname} = lc($dat{ljname}) || '-';
 			$dat{dwname} = lc($dat{dwname}) || '-';
